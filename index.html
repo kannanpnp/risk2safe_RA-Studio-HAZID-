@@ -477,14 +477,16 @@ textarea{resize:vertical;min-height:72px}
     <div class="fg" style="margin-top:4px">
       <label>Model</label>
       <select id="modelSelect">
-        <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (recommended — fast & capable)</option>
-        <option value="claude-opus-4-5">Claude Opus 4.5 (most capable, slower)</option>
+        <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (recommended — fast &amp; capable)</option>
+        <option value="claude-opus-4-6">Claude Opus 4.6 (most capable, slower)</option>
         <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fastest, lightweight)</option>
       </select>
     </div>
+    <div id="testResult" style="display:none;margin-top:10px;padding:9px 12px;border-radius:var(--r);font-size:12.5px;font-weight:600"></div>
     <div class="modal-foot">
-      <button class="btn btn-g" onclick="closeSettings()">Cancel</button>
       <button class="btn btn-d btn-sm" onclick="clearApiKey()" style="margin-right:auto">Clear Key</button>
+      <button class="btn btn-g" onclick="testConnection(this)">Test Connection</button>
+      <button class="btn btn-g" onclick="closeSettings()">Cancel</button>
       <button class="btn btn-p" onclick="saveApiKey()">Save & Apply</button>
     </div>
   </div>
@@ -926,7 +928,7 @@ function loadStorage(){
 
 // ═══════════════ API KEY SETTINGS ═══════════════
 function getApiKey(){return localStorage.getItem('r2s_apikey')||'';}
-function getModel(){return localStorage.getItem('r2s_model')||'claude-sonnet-4-20250514';}
+function getModel(){return localStorage.getItem('r2s_model')||'claude-sonnet-4-6';}
 
 function openSettings(){
   const key=getApiKey();
@@ -990,38 +992,81 @@ Your role: assist the HAZID team by identifying hazards, assessing risks, develo
 
 async function callAI(userMsg){
   const key=getApiKey();
-  if(!key)throw new Error('No API key. Click "⚙ API Key" in the header to add yours.');
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':key,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-allow-browser':'true'
-    },
-    body:JSON.stringify({model:getModel(),max_tokens:1000,system:AI_SYSTEM,messages:[{role:'user',content:userMsg}]})
-  });
-  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`API error ${resp.status}`);}
+  if(!key)throw new Error('No API key set — click "⚙ API Key" in the header to add yours.');
+  let resp;
+  try{
+    resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-allow-browser':'true'
+      },
+      body:JSON.stringify({model:getModel(),max_tokens:1000,system:AI_SYSTEM,messages:[{role:'user',content:userMsg}]})
+    });
+  }catch(netErr){
+    throw new Error('Cannot reach api.anthropic.com — check your internet connection. If you are behind a firewall or corporate network, the API endpoint may be blocked.');
+  }
+  if(!resp.ok){
+    let msg=`API error ${resp.status}`;
+    try{const e=await resp.json();msg=e.error?.message||msg;}catch{}
+    throw new Error(msg);
+  }
   const d=await resp.json();return d.content[0].text;
 }
 
 async function callAIWithHistory(userMsg){
   const key=getApiKey();
-  if(!key)throw new Error('No API key. Click "⚙ API Key" in the header to add yours.');
+  if(!key)throw new Error('No API key set — click "⚙ API Key" in the header to add yours.');
   chatHistory.push({role:'user',content:userMsg});
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':key,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-allow-browser':'true'
-    },
-    body:JSON.stringify({model:getModel(),max_tokens:1000,system:AI_SYSTEM,messages:chatHistory})
-  });
-  if(!resp.ok){chatHistory.pop();const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`API error ${resp.status}`);}
+  let resp;
+  try{
+    resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-allow-browser':'true'
+      },
+      body:JSON.stringify({model:getModel(),max_tokens:200,system:AI_SYSTEM,messages:chatHistory})
+    });
+  }catch(netErr){
+    chatHistory.pop();
+    throw new Error('Cannot reach api.anthropic.com — check your internet connection.');
+  }
+  if(!resp.ok){
+    chatHistory.pop();
+    let msg=`API error ${resp.status}`;
+    try{const e=await resp.json();msg=e.error?.message||msg;}catch{}
+    throw new Error(msg);
+  }
   const d=await resp.json();const reply=d.content[0].text;
   chatHistory.push({role:'assistant',content:reply});return reply;
+}
+
+async function testConnection(btn){
+  const key=document.getElementById('apiKeyInput').value.trim();
+  const model=document.getElementById('modelSelect').value;
+  const res=document.getElementById('testResult');
+  if(!key){res.style.display='block';res.style.background='#fee2e2';res.style.color='#dc2626';res.textContent='⚠ Enter an API key first';return;}
+  btn.disabled=true;btn.textContent='Testing…';res.style.display='none';
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
+      body:JSON.stringify({model,max_tokens:20,messages:[{role:'user',content:'Reply with the single word: OK'}]})
+    });
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
+    const d=await resp.json();const txt=d.content?.[0]?.text||'';
+    res.style.display='block';res.style.background='#dcfce7';res.style.color='#16a34a';
+    res.textContent=`✓ Connected successfully — model responded: "${txt.trim()}"`;
+  }catch(e){
+    res.style.display='block';res.style.background='#fee2e2';res.style.color='#dc2626';
+    res.textContent=`✗ ${e.message}`;
+  }
+  btn.disabled=false;btn.textContent='Test Connection';
 }
 
 function projCtx(){
