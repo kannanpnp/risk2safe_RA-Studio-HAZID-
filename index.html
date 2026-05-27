@@ -13,7 +13,7 @@
   --g300:#cbd5e1; --g400:#94a3b8; --g500:#64748b; --g600:#475569;
   --g700:#334155; --g800:#1e293b;
   --cat1:#dc2626; --cat2:#ea580c; --cat3:#ca8a04; --cat4:#16a34a;
-  --ai:#7c3aed; --ai2:#6d28d9; --ai-l:#f5f3ff; --ai-m:#c4b5fd;
+  --ai:#10a37f; --ai2:#0d8a6b; --ai-l:#f0fdf9; --ai-m:#6ee7d0;
   --r:8px; --rl:12px;
   --sh:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.08);
   --shm:0 4px 6px rgba(0,0,0,.1); --shl:0 10px 20px rgba(0,0,0,.15);
@@ -232,13 +232,6 @@ textarea{resize:vertical;min-height:72px}
 .aip-send{width:42px;height:42px;background:var(--ai);border:none;border-radius:var(--r);color:white;font-size:18px;cursor:pointer;flex-shrink:0;display:grid;place-items:center;transition:opacity .15s}
 .aip-send:hover{opacity:.85}.aip-send:disabled{opacity:.4}
 
-/* ── AI SUGGESTION TOAST ── */
-.ai-suggestion{background:var(--ai-l);border:1px solid var(--ai-m);border-radius:var(--r);padding:10px 12px;font-size:12.5px;color:var(--g700);margin-top:6px;line-height:1.5;display:none}
-.ai-suggestion.show{display:block}
-.ai-sug-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.ai-sug-label{font-size:10.5px;font-weight:800;color:var(--ai);text-transform:uppercase;letter-spacing:.4px}
-.ai-sug-apply{padding:3px 8px;background:var(--ai);color:white;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)}
-
 /* ── NOTIFICATION ── */
 .notif{position:fixed;bottom:18px;right:18px;background:var(--navy);color:var(--white);padding:11px 15px;border-radius:var(--r);font-size:12.5px;box-shadow:var(--shl);z-index:999;display:none;align-items:center;gap:7px;border-left:3px solid var(--amber)}
 .notif.show{display:flex}
@@ -315,7 +308,7 @@ textarea{resize:vertical;min-height:72px}
       <div class="ch"><div class="ct" style="color:var(--ai)">✦ AI Facilitation — How It Works</div></div>
       <div class="fg2">
         <div style="font-size:13px;color:var(--g700);line-height:1.7">
-          The AI facilitator is integrated throughout this tool:<br>
+          The AI facilitator (powered by OpenAI GPT-4o) is integrated throughout this tool:<br>
           <strong>Setup:</strong> Draft scope from project context<br>
           <strong>Categories:</strong> AI recommends applicable categories<br>
           <strong>Worksheet:</strong> Generate scenarios, suggest causes, controls and recommendations per scenario<br>
@@ -447,21 +440,19 @@ textarea{resize:vertical;min-height:72px}
 </div>
 </main>
 
-<!-- AI PANEL -->
-
-
-<!-- API KEY MODAL -->
+<!-- API KEY MODAL — OpenAI -->
 <div id="keyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center">
-  <div style="background:white;border-radius:14px;padding:28px;width:440px;max-width:95vw;box-shadow:0 20px 40px rgba(0,0,0,.2)">
-    <h3 style="font-size:17px;font-weight:800;color:#0a0e1c;margin-bottom:8px">🔑 Anthropic API Key</h3>
+  <div style="background:white;border-radius:14px;padding:28px;width:460px;max-width:95vw;box-shadow:0 20px 40px rgba(0,0,0,.2)">
+    <h3 style="font-size:17px;font-weight:800;color:#0a0e1c;margin-bottom:8px">🔑 OpenAI API Key</h3>
     <p style="font-size:13px;color:#64748b;line-height:1.65;margin-bottom:16px">
-      Risk2Safe uses the Claude API for all AI features. Paste your personal Anthropic API key below.<br><br>
-      🔒 <strong>Your key stays on your device</strong> — saved only in your browser's local storage and sent directly to Anthropic. No backend, no server, no sharing.
-      <br><br>Don't have a key? Get one free at <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#7c3aed;font-weight:600">console.anthropic.com → API Keys</a>
+      Risk2Safe uses the <strong>OpenAI API (GPT-4o)</strong> for all AI features. Paste your OpenAI API key below.<br><br>
+      🔒 <strong>Your key stays on your device</strong> — saved only in your browser's local storage and sent directly to OpenAI. No backend, no server, no sharing.
+      <br><br>Don't have a key? Get one free at <a href="https://platform.openai.com/api-keys" target="_blank" style="color:#10a37f;font-weight:600">platform.openai.com → API Keys</a>
     </p>
-    <input type="password" id="keyInput" placeholder="sk-ant-api03-…" autocomplete="off"
+    <input type="password" id="keyInput" placeholder="sk-proj-…" autocomplete="off"
       style="width:100%;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:14px;box-sizing:border-box"
       onkeydown="if(event.key==='Enter')saveKey()">
+    <div style="font-size:11.5px;color:#94a3b8;margin-bottom:14px">Model in use: <strong style="color:#10a37f">gpt-4o</strong> — you can change this in the source if needed.</div>
     <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
       <button onclick="clearKey()" style="padding:7px 14px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-right:auto;font-family:inherit">Clear Key</button>
       <button onclick="document.getElementById('keyModal').style.display='none'" style="padding:7px 14px;background:#f1f5f9;color:#475569;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>
@@ -475,12 +466,12 @@ textarea{resize:vertical;min-height:72px}
   <div class="aip-header">
     <div>
       <div class="aip-title">✦ AI HAZID Facilitator</div>
-      <div class="aip-sub">Expert guidance for your HAZID study</div>
+      <div class="aip-sub">GPT-4o · Expert guidance for your HAZID study</div>
     </div>
     <button class="aip-close" onclick="toggleAIPanel()">✕</button>
   </div>
   <div class="aip-msgs" id="aiMsgs">
-    <div class="chat-msg ai">👋 Hello! I'm your AI HAZID facilitator — a senior HSE professional with deep expertise in process safety, HAZID/HAZOP methodology, risk assessment and emergency response.<br><br>Ask me anything: hazard identification, risk ratings, control measures, ALARP justification, or use the quick chips below to get started.</div>
+    <div class="chat-msg ai">👋 Hello! I'm your AI HAZID facilitator powered by GPT-4o — a senior HSE professional with deep expertise in process safety, HAZID/HAZOP methodology, risk assessment and emergency response.<br><br>Ask me anything: hazard identification, risk ratings, control measures, ALARP justification, or use the quick chips below to get started.</div>
   </div>
   <div class="aip-chips">
     <div class="chip" onclick="sendChip('What is HAZID methodology and how does it differ from HAZOP?')">What is HAZID?</div>
@@ -579,7 +570,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
   document.addEventListener('keydown',e=>{
     if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();exportJSON();}
-    if(e.key==='Escape')closeSettings();
   });
   setInterval(saveData,30000);
 });
@@ -692,7 +682,7 @@ function scHTML(s,n){
     <div class="fg">
       <label>Consequences</label>
       <div class="field-row">
-        <textarea placeholder="What would happen if this hazard is not controlled? (injuries, fatalities, asset damage, environmental impact, reputational harm...)" rows="2"
+        <textarea placeholder="What would happen if this hazard is not controlled?" rows="2"
           id="cons_${s.id}" onchange="updSC('${s.id}','consequences',this.value)">${s.consequences||''}</textarea>
         <button class="ai-btn-inline" onclick="aiSuggestConsequences('${s.id}',this)" title="AI suggests consequences for this scenario">✦ Cons.</button>
       </div>
@@ -717,7 +707,7 @@ function scHTML(s,n){
     </div>
 
     <div style="display:flex;justify-content:flex-end;margin-top:8px">
-      <button class="btn btn-ai btn-sm" onclick="aiSuggestControls('${s.id}',this)" title="AI suggests controls for all 3 layers based on this scenario">✦ AI Suggest All Controls (Steps 3–5)</button>
+      <button class="btn btn-ai btn-sm" onclick="aiSuggestControls('${s.id}',this)">✦ AI Suggest All Controls (Steps 3–5)</button>
     </div>
 
     <div class="ss">
@@ -729,7 +719,7 @@ function scHTML(s,n){
 
     <div class="ss">
       <div class="ss-title"><span class="sp">Step 4</span> Mitigative / Recovery Controls (Post-Incident)</div>
-      <div class="fg"><textarea placeholder="PSV/BDV, deluge systems, ESD/EDP, secondary containment, bunds, emergency response, firefighting that REDUCE consequences..." rows="3"
+      <div class="fg"><textarea placeholder="PSV/BDV, deluge systems, ESD/EDP, secondary containment, bunds, emergency response, firefighting..." rows="3"
         id="mitig_${s.id}" onchange="updSC('${s.id}','mitigCtrl',this.value)">${s.mitigCtrl}</textarea>
         <div class="fhint">Controls that reduce the SEVERITY / consequences of the event</div></div>
     </div>
@@ -773,7 +763,7 @@ function scHTML(s,n){
         <div class="field-row">
           <textarea placeholder="Describe recommended actions, additional controls or further studies..." rows="2"
             id="reco_${s.id}" onchange="updSC('${s.id}','reco',this.value)">${s.reco}</textarea>
-          <button class="ai-btn-inline" onclick="aiSuggestReco('${s.id}',this)" title="AI recommends actions based on residual risk and current controls">✦ Reco</button>
+          <button class="ai-btn-inline" onclick="aiSuggestReco('${s.id}',this)">✦ Reco</button>
         </div>
       </div>
       <div class="fg2">
@@ -921,6 +911,7 @@ function toggleAIPanel(){
   document.getElementById('aiOverlay').classList.toggle('open',aiPanelOpen);
 }
 
+// ── OpenAI system prompt ──
 const AI_SYSTEM=`You are an expert HAZID (Hazard Identification Study) facilitator with 30+ years of experience in oil & gas, petrochemical, LNG and industrial HSE. You have deep expertise in:
 - HAZID/HAZOP methodology per IEC 61882 and IEC 61511
 - Process safety management (OSHA PSM, API RP 750, API RP 14C)
@@ -933,30 +924,49 @@ const AI_SYSTEM=`You are an expert HAZID (Hazard Identification Study) facilitat
 
 Your role: assist the HAZID team by identifying hazards, assessing risks, developing effective control measures, and facilitating ALARP demonstration. Be concise, practical, and specific. Use industry-standard terminology. When suggesting risk ratings, justify your reasoning.`;
 
+// ── Core OpenAI API caller (single turn) ──
 async function callAI(userMsg){
   const key=getApiKey();
-  if(!key){showKeyModal();throw new Error('Please set your Anthropic API key first.');}
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+  if(!key){showKeyModal();throw new Error('Please set your OpenAI API key first.');}
+  const resp=await fetch('https://api.openai.com/v1/chat/completions',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:AI_SYSTEM,messages:[{role:'user',content:userMsg}]})
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+    body:JSON.stringify({
+      model:'gpt-4o',
+      max_tokens:1000,
+      messages:[
+        {role:'system',content:AI_SYSTEM},
+        {role:'user',content:userMsg}
+      ]
+    })
   });
-  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`Error ${resp.status}`);}
-  const d=await resp.json();return d.content[0].text;
+  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`OpenAI error ${resp.status}`);}
+  const d=await resp.json();
+  return d.choices[0].message.content;
 }
 
+// ── Multi-turn chat (AI panel) ──
 async function callAIWithHistory(userMsg){
   const key=getApiKey();
-  if(!key){showKeyModal();throw new Error('Please set your Anthropic API key first.');}
+  if(!key){showKeyModal();throw new Error('Please set your OpenAI API key first.');}
   chatHistory.push({role:'user',content:userMsg});
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+  const resp=await fetch('https://api.openai.com/v1/chat/completions',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:AI_SYSTEM,messages:chatHistory})
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+    body:JSON.stringify({
+      model:'gpt-4o',
+      max_tokens:1000,
+      messages:[
+        {role:'system',content:AI_SYSTEM},
+        ...chatHistory
+      ]
+    })
   });
-  if(!resp.ok){chatHistory.pop();const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`Error ${resp.status}`);}
-  const d=await resp.json();const reply=d.content[0].text;
-  chatHistory.push({role:'assistant',content:reply});return reply;
+  if(!resp.ok){chatHistory.pop();const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`OpenAI error ${resp.status}`);}
+  const d=await resp.json();
+  const reply=d.choices[0].message.content;
+  chatHistory.push({role:'assistant',content:reply});
+  return reply;
 }
 
 function projCtx(){
@@ -973,7 +983,7 @@ async function sendAIChat(){
     const ctx=`Study context: ${projCtx()}\n\nUser question: ${msg}`;
     const reply=await callAIWithHistory(ctx);
     typing.remove();addChatMsg(reply,'ai');
-  }catch(e){typing.remove();addChatMsg('⚠ Connection error. Please try again.','ai');}
+  }catch(e){typing.remove();addChatMsg(`⚠ Error: ${e.message}`,'ai');}
   btn.disabled=false;inp.focus();
 }
 function sendChip(msg){document.getElementById('aiChatInput').value=msg;sendAIChat();}
@@ -991,20 +1001,6 @@ function addTyping(){
   el.appendChild(d);el.scrollTop=el.scrollHeight;return d;
 }
 
-// ═══ AI SETUP ═══
-async function aiDraftScope(btn){
-  const name=document.getElementById('projectName').value;
-  const loc=document.getElementById('location').value;
-  const node=document.getElementById('studyNode').value;
-  if(!name){notify('⚠ Enter a project name first');return;}
-  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> Drafting...';
-  try{
-    const txt=await callAI(`Write a concise HAZID study scope statement (3–4 sentences) for:\nProject: "${name}"\nLocation: "${loc||'not specified'}"\nSystem/Node: "${node||'not specified'}"\n\nInclude: purpose of study, key activities/systems in scope, study boundaries and exclusions. Use professional HSE language. No headings — plain paragraph only.`);
-    document.getElementById('scope').value=txt.trim();saveData();notify('✦ Scope drafted by AI');
-  }catch(e){notify('⚠ AI error: ',true);}
-  btn.disabled=false;btn.innerHTML='✦ AI Draft';
-}
-
 // ═══ AI CATEGORIES ═══
 async function aiRecommendCats(btn){
   const ctx=projCtx();
@@ -1013,7 +1009,6 @@ async function aiRecommendCats(btn){
   const catList=ALL_CATS.map(c=>`${c.id}`).join(',');
   try{
     const txt=await callAI(`You are a HAZID facilitator. Based on this project:\n${ctx}\n\nSelect 8 to 14 applicable hazard category IDs from this list:\n${catList}\n\nRespond with ONLY a JSON array of strings. Example: ["TL01","PF01","PF02"]\nNo explanation. No markdown. No code fences. Only the JSON array.`);
-    // Robust extraction — find first [ ... ] block
     const match=txt.match(/\[[\s\S]*?\]/);
     if(!match)throw new Error('No array found in response');
     const ids=JSON.parse(match[0]);
@@ -1041,7 +1036,7 @@ async function aiGenerateScenarios(btn){
     let added=0;
     scenarios.forEach(sc=>{if(sc.description){addScenario({description:sc.description,category:sc.category||'',causes:sc.causes||'',iSev:String(sc.iSev||''),iLik:sc.iLik||''});added++;}});
     notify(`✦ ${added} scenarios generated`);
-  }catch(e){notify('⚠ Generate error: ',true);}
+  }catch(e){notify('⚠ Generate error: '+e.message);}
   btn.disabled=false;btn.innerHTML='✦ AI Generate Scenarios';
 }
 
@@ -1056,7 +1051,7 @@ async function aiSuggestCauses(id,btn){
     const el=document.getElementById(`causes_${id}`);
     if(el){el.value=txt.trim();updSC(id,'causes',txt.trim());}
     notify('✦ Causes suggested');
-  }catch(e){notify('⚠ Causes error: ',true);}
+  }catch(e){notify('⚠ Causes error: '+e.message);}
   btn.disabled=false;btn.innerHTML='✦ Causes';
 }
 
@@ -1076,7 +1071,7 @@ Describe 3 to 5 potential consequences if this hazard is not controlled. Cover: 
     const el=document.getElementById(`cons_${id}`);
     if(el){el.value=txt.trim();updSC(id,'consequences',txt.trim());}
     notify('✦ Consequences suggested');
-  }catch(e){notify('⚠ Consequences error: ',true);}
+  }catch(e){notify('⚠ Consequences error: '+e.message);}
   btn.disabled=false;btn.innerHTML='✦ Cons.';
 }
 
@@ -1095,7 +1090,7 @@ async function aiSuggestControls(id,btn){
     if(ctrl.mitigCtrl){const e=document.getElementById(`mitig_${id}`);if(e){e.value=ctrl.mitigCtrl;updSC(id,'mitigCtrl',ctrl.mitigCtrl);}}
     if(ctrl.adminCtrl){const e=document.getElementById(`admin_${id}`);if(e){e.value=ctrl.adminCtrl;updSC(id,'adminCtrl',ctrl.adminCtrl);}}
     notify('✦ Controls suggested for Steps 3–5');
-  }catch(e){notify('⚠ Controls error: ',true);}
+  }catch(e){notify('⚠ Controls error: '+e.message);}
   btn.disabled=false;btn.innerHTML='✦ AI Suggest All Controls (Steps 3–5)';
 }
 
@@ -1111,7 +1106,7 @@ async function aiSuggestReco(id,btn){
     const el=document.getElementById(`reco_${id}`);
     if(el){el.value=txt.trim();updSC(id,'reco',txt.trim());}
     notify('✦ Recommendations suggested');
-  }catch(e){notify('⚠ Reco error: ',true);}
+  }catch(e){notify('⚠ Reco error: '+e.message);}
   btn.disabled=false;btn.innerHTML='✦ Reco';
 }
 
@@ -1172,31 +1167,30 @@ let nTimer;
 function notify(msg,isErr){const el=document.getElementById('notif');el.textContent=msg;el.style.borderLeftColor=isErr?'#dc2626':'var(--amber)';el.classList.add('show');clearTimeout(nTimer);nTimer=setTimeout(()=>el.classList.remove('show'),isErr?8000:6000);}
 
 // ─── API KEY ────────────────────────────────────────────────────
-function getApiKey(){return localStorage.getItem('r2s_apikey')||'';}
+function getApiKey(){return localStorage.getItem('r2s_openai_key')||'';}
 function showKeyModal(){
   document.getElementById('keyModal').style.display='flex';
   document.getElementById('keyInput').value=getApiKey();
 }
 function saveKey(){
   const k=document.getElementById('keyInput').value.trim();
-  if(!k){return;}
-  localStorage.setItem('r2s_apikey',k);
+  if(!k)return;
+  localStorage.setItem('r2s_openai_key',k);
   document.getElementById('keyModal').style.display='none';
-  updKeyBtn();notify('✓ API key saved — AI features ready');
+  updKeyBtn();notify('✓ OpenAI API key saved — AI features ready');
 }
 function clearKey(){
-  localStorage.removeItem('r2s_apikey');
+  localStorage.removeItem('r2s_openai_key');
   document.getElementById('keyInput').value='';
   updKeyBtn();notify('✓ Key cleared');
 }
 function updKeyBtn(){
   const btn=document.getElementById('keyBtn');if(!btn)return;
   const ok=!!getApiKey();
-  btn.textContent=ok?'🔑 Key Set ✓':'🔑 Set API Key';
+  btn.textContent=ok?'🔑 Key Set ✓':'🔑 Set OpenAI Key';
   btn.style.color=ok?'#22c55e':'';
   btn.style.borderColor=ok?'#22c55e':'';
 }
-
 </script>
 </body>
 </html>
