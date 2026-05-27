@@ -633,7 +633,7 @@ function updCatSum(){
 // ═══════════════ WORKSHEET ═══════════════
 function addScenario(data={}){
   const id=`S${String(nextId++).padStart(3,'0')}`;
-  ST.scenarios.push({id,category:'',description:'',causes:'',iSev:'',iLik:'',preventCtrl:'',mitigCtrl:'',adminCtrl:'',rSev:'',rLik:'',accept:'',reco:'',resp:'',due:'',created:new Date().toISOString(),...data});
+  ST.scenarios.push({id,category:'',description:'',causes:'',consequences:'',iSev:'',iLik:'',preventCtrl:'',mitigCtrl:'',adminCtrl:'',rSev:'',rLik:'',accept:'',reco:'',resp:'',due:'',created:new Date().toISOString(),...data});
   renderWS();updateBadges();saveData();
   setTimeout(()=>{const el=document.getElementById(`sc_${id}`);if(el){el.classList.add('exp');el.scrollIntoView({behavior:'smooth',block:'center'});}},60);
 }
@@ -687,6 +687,14 @@ function scHTML(s,n){
         <textarea placeholder="Root causes, deviations or guidewords..." rows="2"
           id="causes_${s.id}" onchange="updSC('${s.id}','causes',this.value)">${s.causes}</textarea>
         <button class="ai-btn-inline" onclick="aiSuggestCauses('${s.id}',this)" title="AI suggests causes for this scenario">✦ Causes</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Consequences</label>
+      <div class="field-row">
+        <textarea placeholder="What would happen if this hazard is not controlled? (injuries, fatalities, asset damage, environmental impact, reputational harm...)" rows="2"
+          id="cons_${s.id}" onchange="updSC('${s.id}','consequences',this.value)">${s.consequences||''}</textarea>
+        <button class="ai-btn-inline" onclick="aiSuggestConsequences('${s.id}',this)" title="AI suggests consequences for this scenario">✦ Cons.</button>
       </div>
     </div>
 
@@ -993,7 +1001,7 @@ async function aiDraftScope(btn){
   try{
     const txt=await callAI(`Write a concise HAZID study scope statement (3–4 sentences) for:\nProject: "${name}"\nLocation: "${loc||'not specified'}"\nSystem/Node: "${node||'not specified'}"\n\nInclude: purpose of study, key activities/systems in scope, study boundaries and exclusions. Use professional HSE language. No headings — plain paragraph only.`);
     document.getElementById('scope').value=txt.trim();saveData();notify('✦ Scope drafted by AI');
-  }catch(e){notify('⚠ AI error: '+e.message);}
+  }catch(e){notify('⚠ AI error: ',true);}
   btn.disabled=false;btn.innerHTML='✦ AI Draft';
 }
 
@@ -1033,7 +1041,7 @@ async function aiGenerateScenarios(btn){
     let added=0;
     scenarios.forEach(sc=>{if(sc.description){addScenario({description:sc.description,category:sc.category||'',causes:sc.causes||'',iSev:String(sc.iSev||''),iLik:sc.iLik||''});added++;}});
     notify(`✦ ${added} scenarios generated`);
-  }catch(e){notify('⚠ Generate error: '+e.message);}
+  }catch(e){notify('⚠ Generate error: ',true);}
   btn.disabled=false;btn.innerHTML='✦ AI Generate Scenarios';
 }
 
@@ -1048,8 +1056,28 @@ async function aiSuggestCauses(id,btn){
     const el=document.getElementById(`causes_${id}`);
     if(el){el.value=txt.trim();updSC(id,'causes',txt.trim());}
     notify('✦ Causes suggested');
-  }catch(e){notify('⚠ Causes error: '+e.message);}
+  }catch(e){notify('⚠ Causes error: ',true);}
   btn.disabled=false;btn.innerHTML='✦ Causes';
+}
+
+// ═══ AI SUGGEST CONSEQUENCES ═══
+async function aiSuggestConsequences(id,btn){
+  const s=ST.scenarios.find(s=>s.id===id);if(!s)return;
+  if(!s.description&&!s.category){notify('⚠ Enter a scenario description or category first');return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span>';
+  const catLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||'general hazard';
+  try{
+    const txt=await callAI(`Project: ${projCtx()}
+HAZID scenario: "${s.description||'not specified'}"
+Category: ${catLbl}
+Causes: ${s.causes||'not specified'}
+
+Describe 3 to 5 potential consequences if this hazard is not controlled. Cover: injuries/fatalities, asset damage, environmental impact, and reputational/legal consequences. Return plain text only — no headings, no bullets, use semicolons between consequences.`);
+    const el=document.getElementById(`cons_${id}`);
+    if(el){el.value=txt.trim();updSC(id,'consequences',txt.trim());}
+    notify('✦ Consequences suggested');
+  }catch(e){notify('⚠ Consequences error: ',true);}
+  btn.disabled=false;btn.innerHTML='✦ Cons.';
 }
 
 // ═══ AI SUGGEST CONTROLS ═══
@@ -1067,7 +1095,7 @@ async function aiSuggestControls(id,btn){
     if(ctrl.mitigCtrl){const e=document.getElementById(`mitig_${id}`);if(e){e.value=ctrl.mitigCtrl;updSC(id,'mitigCtrl',ctrl.mitigCtrl);}}
     if(ctrl.adminCtrl){const e=document.getElementById(`admin_${id}`);if(e){e.value=ctrl.adminCtrl;updSC(id,'adminCtrl',ctrl.adminCtrl);}}
     notify('✦ Controls suggested for Steps 3–5');
-  }catch(e){notify('⚠ Controls error: '+e.message);}
+  }catch(e){notify('⚠ Controls error: ',true);}
   btn.disabled=false;btn.innerHTML='✦ AI Suggest All Controls (Steps 3–5)';
 }
 
@@ -1083,18 +1111,18 @@ async function aiSuggestReco(id,btn){
     const el=document.getElementById(`reco_${id}`);
     if(el){el.value=txt.trim();updSC(id,'reco',txt.trim());}
     notify('✦ Recommendations suggested');
-  }catch(e){notify('⚠ Reco error: '+e.message);}
+  }catch(e){notify('⚠ Reco error: ',true);}
   btn.disabled=false;btn.innerHTML='✦ Reco';
 }
 
 // ═══════════════ EXPORT ═══════════════
 function exportCSV(){
-  const hdr=['#','ID','Category','Description','Causes','Init.Sev','Init.Lik','Init.Cell','Init.Cat','Prev.Controls','Mitig.Controls','Admin.Controls','Res.Sev','Res.Lik','Res.Cell','Res.Cat','Acceptability','Recommendations','Responsible','Due Date'];
+  const hdr=['#','ID','Category','Description','Causes','Consequences','Init.Sev','Init.Lik','Init.Cell','Init.Cat','Prev.Controls','Mitig.Controls','Admin.Controls','Res.Sev','Res.Lik','Res.Cell','Res.Cat','Acceptability','Recommendations','Responsible','Due Date'];
   const rows=ST.scenarios.map((s,i)=>{
     const ic=cell(s.iSev,s.iLik)||'',rc=cell(s.rSev,s.rLik)||'';
     const ik=RM[ic]||'',rk=RM[rc]||'';
     const cLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||'';
-    return[i+1,s.id,cLbl,s.description,s.causes,s.iSev,s.iLik,ic,ik?`Cat ${ik} ${CAT_LBL[ik]}`:'',s.preventCtrl,s.mitigCtrl,s.adminCtrl,s.rSev,s.rLik,rc,rk?`Cat ${rk} ${CAT_LBL[rk]}`:'',s.accept,s.reco,s.resp,s.due].map(v=>`"${String(v||'').replace(/"/g,'""')}"`);
+    return[i+1,s.id,cLbl,s.description,s.causes,s.consequences||'',s.iSev,s.iLik,ic,ik?`Cat ${ik} ${CAT_LBL[ik]}`:'',s.preventCtrl,s.mitigCtrl,s.adminCtrl,s.rSev,s.rLik,rc,rk?`Cat ${rk} ${CAT_LBL[rk]}`:'',s.accept,s.reco,s.resp,s.due].map(v=>`"${String(v||'').replace(/"/g,'""')}"`);
   });
   const csv=[hdr.map(h=>`"${h}"`).join(','),...rows.map(r=>r.join(','))].join('\n');
   dl(csv,`HAZID_${ST.setup.projectName||'Study'}_${ts()}.csv`,'text/csv');notify('✓ CSV exported');
@@ -1141,7 +1169,7 @@ function dl(content,filename,mime){
 function ts(){return new Date().toISOString().slice(0,10);}
 
 let nTimer;
-function notify(msg){const el=document.getElementById('notif');el.textContent=msg;el.classList.add('show');clearTimeout(nTimer);nTimer=setTimeout(()=>el.classList.remove('show'),3500);}
+function notify(msg,isErr){const el=document.getElementById('notif');el.textContent=msg;el.style.borderLeftColor=isErr?'#dc2626':'var(--amber)';el.classList.add('show');clearTimeout(nTimer);nTimer=setTimeout(()=>el.classList.remove('show'),isErr?8000:6000);}
 
 // ─── API KEY ────────────────────────────────────────────────────
 function getApiKey(){return localStorage.getItem('r2s_apikey')||'';}
