@@ -1022,20 +1022,18 @@ async function aiRecommendCats(btn){
 async function aiGenerateScenarios(btn){
   if(!ST.setup.projectName){notify('⚠ Fill in project details in Setup tab first');return;}
   btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> Generating...';
-  const applicable=ALL_CATS.filter(c=>ST.cats[c.id]==='applicable').map(c=>`${c.id}: ${c.lbl}`);
-  const catContext=applicable.length?`Applicable hazard categories:\n${applicable.join('\n')}`:`All available categories:\n${ALL_CATS.slice(0,15).map(c=>`${c.id}: ${c.lbl}`).join('\n')}`;
+  const applicable=ALL_CATS.filter(c=>ST.cats[c.id]==='applicable').map(c=>c.id);
+  const catIds=(applicable.length?applicable:ALL_CATS.slice(0,12).map(c=>c.id)).join(',');
   try{
-    const txt=await callAI(`You are facilitating a HAZID workshop for:\n${projCtx()}\n\n${catContext}\n\nGenerate 5 realistic, site-specific HAZID scenarios. Return ONLY a JSON array — no markdown, no explanation.\n\nEach item must have exactly these keys:\n{\n  "description": "specific scenario description (1 sentence)",\n  "category": "category ID from the list above",\n  "causes": "3-5 root causes separated by semicolons",\n  "iSev": <number 1-6>,\n  "iLik": "<letter A-F>"\n}\n\nBe specific to the project type and location. Vary severity and likelihood across scenarios.`);
-    const clean=txt.replace(/```json|```/g,'').trim();
-    const scenarios=JSON.parse(clean);
-    if(!Array.isArray(scenarios))throw new Error('Not an array');
-    scenarios.forEach(sc=>{
-      if(sc.description&&sc.iSev&&sc.iLik){
-        addScenario({description:sc.description,category:sc.category||'',causes:sc.causes||'',iSev:String(sc.iSev),iLik:sc.iLik});
-      }
-    });
-    notify(`✦ AI generated ${scenarios.length} scenarios`);
-  }catch(e){notify('⚠ Could not generate scenarios. Check project details and try again.');}
+    const txt=await callAI(`HAZID workshop for: ${projCtx()}\nCategory IDs available: ${catIds}\n\nGenerate 5 HAZID scenarios. Return ONLY a raw JSON array, no markdown, no explanation, no code fences.\nFormat: [{"description":"...","category":"<ID>","causes":"cause1; cause2","iSev":<1-6>,"iLik":"<A-F>"}]\nVary the severity and likelihood. Use real industry language.`);
+    const match=txt.match(/\[[\s\S]*\]/);
+    if(!match)throw new Error('No JSON array found in response');
+    const scenarios=JSON.parse(match[0]);
+    if(!Array.isArray(scenarios)||!scenarios.length)throw new Error('Empty result');
+    let added=0;
+    scenarios.forEach(sc=>{if(sc.description){addScenario({description:sc.description,category:sc.category||'',causes:sc.causes||'',iSev:String(sc.iSev||''),iLik:sc.iLik||''});added++;}});
+    notify(`✦ ${added} scenarios generated`);
+  }catch(e){notify('⚠ Generate error: '+e.message);}
   btn.disabled=false;btn.innerHTML='✦ AI Generate Scenarios';
 }
 
@@ -1044,13 +1042,13 @@ async function aiSuggestCauses(id,btn){
   const s=ST.scenarios.find(s=>s.id===id);if(!s)return;
   if(!s.description&&!s.category){notify('⚠ Enter a scenario description or category first');return;}
   btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span>';
-  const catLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||s.category||'general hazard';
+  const catLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||'general hazard';
   try{
-    const txt=await callAI(`${projCtx()}\n\nHAZID Scenario: "${s.description||'not specified'}"\nHazard Category: ${catLbl}\n\nList 5–7 specific, realistic root causes or initiating guidewords for this scenario in the context of this facility/project. Separate with semicolons. Be concise and industry-specific. Return ONLY the causes — no intro, no numbering, no explanation.`);
+    const txt=await callAI(`Project: ${projCtx()}\nHAZID scenario: "${s.description||'not specified'}"\nCategory: ${catLbl}\n\nList 5 to 7 specific root causes or guidewords. Return ONLY the causes as plain text separated by semicolons. No numbering, no bullets, no intro, no explanation.`);
     const el=document.getElementById(`causes_${id}`);
     if(el){el.value=txt.trim();updSC(id,'causes',txt.trim());}
-    notify('✦ Causes suggested by AI');
-  }catch(e){notify('⚠ AI error: '+e.message);}
+    notify('✦ Causes suggested');
+  }catch(e){notify('⚠ Causes error: '+e.message);}
   btn.disabled=false;btn.innerHTML='✦ Causes';
 }
 
@@ -1059,17 +1057,17 @@ async function aiSuggestControls(id,btn){
   const s=ST.scenarios.find(s=>s.id===id);if(!s)return;
   if(!s.description&&!s.category){notify('⚠ Enter a scenario description or category first');return;}
   btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> Generating controls...';
-  const catLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||s.category||'general hazard';
-  const sevLbl=SEVERITY.find(sv=>sv.id==s.iSev)?.lbl||'';const likLbl=LIKELIHOOD.find(l=>l.id===s.iLik)?.lbl||'';
+  const catLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||'general hazard';
   try{
-    const txt=await callAI(`${projCtx()}\n\nHAZID Scenario: "${s.description||'not specified'}"\nCategory: ${catLbl}\nInitial Risk: Severity ${s.iSev||'?'} (${sevLbl}) × Likelihood ${s.iLik||'?'} (${likLbl})\nCauses: ${s.causes||'not specified'}\n\nSuggest realistic, specific controls for this scenario. Return ONLY a JSON object — no markdown, no explanation:\n{\n  "preventCtrl": "3-4 specific preventative controls (engineering barriers, interlocks, design features) — semicolons between items",\n  "mitigCtrl": "3-4 specific mitigative/recovery controls (emergency systems, secondary containment) — semicolons between items",\n  "adminCtrl": "2-3 administrative controls (procedures, permits, training, inspections) — semicolons between items"\n}`);
-    const clean=txt.replace(/```json|```/g,'').trim();
-    const ctrl=JSON.parse(clean);
+    const txt=await callAI(`Project: ${projCtx()}\nHAZID scenario: "${s.description||'not specified'}"\nCategory: ${catLbl}\nCauses: ${s.causes||'not specified'}\n\nSuggest controls. Return ONLY a raw JSON object, no markdown, no code fences:\n{"preventCtrl":"control1; control2; control3","mitigCtrl":"control1; control2; control3","adminCtrl":"control1; control2"}`);
+    const match=txt.match(/\{[\s\S]*\}/);
+    if(!match)throw new Error('No JSON object in response');
+    const ctrl=JSON.parse(match[0]);
     if(ctrl.preventCtrl){const e=document.getElementById(`prev_${id}`);if(e){e.value=ctrl.preventCtrl;updSC(id,'preventCtrl',ctrl.preventCtrl);}}
     if(ctrl.mitigCtrl){const e=document.getElementById(`mitig_${id}`);if(e){e.value=ctrl.mitigCtrl;updSC(id,'mitigCtrl',ctrl.mitigCtrl);}}
     if(ctrl.adminCtrl){const e=document.getElementById(`admin_${id}`);if(e){e.value=ctrl.adminCtrl;updSC(id,'adminCtrl',ctrl.adminCtrl);}}
-    notify('✦ Controls for Steps 3–5 suggested by AI');
-  }catch(e){notify('⚠ Could not generate controls. Try again.');}
+    notify('✦ Controls suggested for Steps 3–5');
+  }catch(e){notify('⚠ Controls error: '+e.message);}
   btn.disabled=false;btn.innerHTML='✦ AI Suggest All Controls (Steps 3–5)';
 }
 
@@ -1079,14 +1077,13 @@ async function aiSuggestReco(id,btn){
   btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span>';
   const catLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||'general hazard';
   const rCell=cell(s.rSev,s.rLik)||'not assessed';
-  const rCat=cat(s.rSev,s.rLik);
-  const rCatLbl=rCat?`Cat ${rCat} — ${CAT_LBL[rCat]}`:'not assessed';
+  const rCat=cat(s.rSev,s.rLik);const rCatLbl=rCat?`Cat ${rCat} — ${CAT_LBL[rCat]}`:'not assessed';
   try{
-    const txt=await callAI(`${projCtx()}\n\nHAZID Scenario: "${s.description||'not specified'}"\nCategory: ${catLbl}\nResidual Risk: ${rCell} (${rCatLbl})\nExisting Preventative Controls: ${s.preventCtrl||'none listed'}\nExisting Mitigative Controls: ${s.mitigCtrl||'none listed'}\nAdministrative Controls: ${s.adminCtrl||'none listed'}\n\nBased on the residual risk level, suggest 2–3 specific, actionable recommendations to further reduce risk or verify ALARP. Be practical and facility-specific. Return plain text only — no headings, no bullet points, just the recommendations as a paragraph or 2–3 sentences.`);
+    const txt=await callAI(`Project: ${projCtx()}\nHAZID scenario: "${s.description||'not specified'}"\nCategory: ${catLbl}\nResidual risk: ${rCell} (${rCatLbl})\nPreventative controls: ${s.preventCtrl||'none'}\nMitigative controls: ${s.mitigCtrl||'none'}\nAdmin controls: ${s.adminCtrl||'none'}\n\nWrite 2 to 3 specific, actionable recommendations to further reduce risk or confirm ALARP. Return plain text only — no headings, no bullets.`);
     const el=document.getElementById(`reco_${id}`);
     if(el){el.value=txt.trim();updSC(id,'reco',txt.trim());}
-    notify('✦ Recommendations suggested by AI');
-  }catch(e){notify('⚠ AI error: '+e.message);}
+    notify('✦ Recommendations suggested');
+  }catch(e){notify('⚠ Reco error: '+e.message);}
   btn.disabled=false;btn.innerHTML='✦ Reco';
 }
 
