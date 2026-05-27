@@ -259,6 +259,7 @@ textarea{resize:vertical;min-height:72px}
   <div class="ai-header-badge">✦ AI Facilitated</div>
   <div class="proj-badge" id="projBadge">No project loaded — visit Setup tab</div>
   <div class="save-ind"><div class="save-dot" id="saveDot"></div><span id="saveText">Auto-save</span></div>
+  <button id="keyBtn" onclick="showKeyModal()" style="display:flex;align-items:center;gap:5px;padding:5px 13px;background:var(--navy3);border:1.5px solid var(--navy4);border-radius:100px;color:var(--g300);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;transition:all .15s">🔑 Set API Key</button>
   <button class="ai-fab" onclick="toggleAIPanel()">✦ AI Facilitator</button>
 </header>
 
@@ -451,6 +452,27 @@ textarea{resize:vertical;min-height:72px}
 
 <!-- AI PANEL -->
 
+
+<!-- API KEY MODAL -->
+<div id="keyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:14px;padding:28px;width:440px;max-width:95vw;box-shadow:0 20px 40px rgba(0,0,0,.2)">
+    <h3 style="font-size:17px;font-weight:800;color:#0a0e1c;margin-bottom:8px">🔑 Anthropic API Key</h3>
+    <p style="font-size:13px;color:#64748b;line-height:1.65;margin-bottom:16px">
+      Risk2Safe uses the Claude API for all AI features. Paste your personal Anthropic API key below.<br><br>
+      🔒 <strong>Your key stays on your device</strong> — saved only in your browser's local storage and sent directly to Anthropic. No backend, no server, no sharing.
+      <br><br>Don't have a key? Get one free at <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#7c3aed;font-weight:600">console.anthropic.com → API Keys</a>
+    </p>
+    <input type="password" id="keyInput" placeholder="sk-ant-api03-…" autocomplete="off"
+      style="width:100%;padding:10px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:14px;box-sizing:border-box"
+      onkeydown="if(event.key==='Enter')saveKey()">
+    <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+      <button onclick="clearKey()" style="padding:7px 14px;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-right:auto;font-family:inherit">Clear Key</button>
+      <button onclick="document.getElementById('keyModal').style.display='none'" style="padding:7px 14px;background:#f1f5f9;color:#475569;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="saveKey()" style="padding:7px 16px;background:#f59e0b;color:#0a0e1c;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Save Key</button>
+    </div>
+  </div>
+</div>
+
 <div class="ai-overlay" id="aiOverlay" onclick="toggleAIPanel()"></div>
 <div class="ai-panel" id="aiPanel">
   <div class="aip-header">
@@ -556,7 +578,7 @@ let nextId=1;
 document.addEventListener('DOMContentLoaded',()=>{
   loadStorage();
   renderCats();renderWS();renderMatrix();renderSummary();renderVideos();
-  updateBadges();updateProjBadge();
+  updateBadges();updateProjBadge();updKeyBtn();
   document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
   document.addEventListener('keydown',e=>{
     if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();exportJSON();}
@@ -907,23 +929,27 @@ const AI_SYSTEM=`You are an expert HAZID (Hazard Identification Study) facilitat
 Your role: assist the HAZID team by identifying hazards, assessing risks, developing effective control measures, and facilitating ALARP demonstration. Be concise, practical, and specific. Use industry-standard terminology. When suggesting risk ratings, justify your reasoning.`;
 
 async function callAI(userMsg){
+  const key=getApiKey();
+  if(!key){showKeyModal();throw new Error('Please set your Anthropic API key first.');}
   const resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:AI_SYSTEM,messages:[{role:'user',content:userMsg}]})
   });
-  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`API error ${resp.status}`);}
+  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`Error ${resp.status}`);}
   const d=await resp.json();return d.content[0].text;
 }
 
 async function callAIWithHistory(userMsg){
+  const key=getApiKey();
+  if(!key){showKeyModal();throw new Error('Please set your Anthropic API key first.');}
   chatHistory.push({role:'user',content:userMsg});
   const resp=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:AI_SYSTEM,messages:chatHistory})
   });
-  if(!resp.ok){chatHistory.pop();const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`API error ${resp.status}`);}
+  if(!resp.ok){chatHistory.pop();const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`Error ${resp.status}`);}
   const d=await resp.json();const reply=d.content[0].text;
   chatHistory.push({role:'assistant',content:reply});return reply;
 }
@@ -1120,6 +1146,33 @@ function ts(){return new Date().toISOString().slice(0,10);}
 
 let nTimer;
 function notify(msg){const el=document.getElementById('notif');el.textContent=msg;el.classList.add('show');clearTimeout(nTimer);nTimer=setTimeout(()=>el.classList.remove('show'),3500);}
+
+// ─── API KEY ────────────────────────────────────────────────────
+function getApiKey(){return localStorage.getItem('r2s_apikey')||'';}
+function showKeyModal(){
+  document.getElementById('keyModal').style.display='flex';
+  document.getElementById('keyInput').value=getApiKey();
+}
+function saveKey(){
+  const k=document.getElementById('keyInput').value.trim();
+  if(!k){return;}
+  localStorage.setItem('r2s_apikey',k);
+  document.getElementById('keyModal').style.display='none';
+  updKeyBtn();notify('✓ API key saved — AI features ready');
+}
+function clearKey(){
+  localStorage.removeItem('r2s_apikey');
+  document.getElementById('keyInput').value='';
+  updKeyBtn();notify('✓ Key cleared');
+}
+function updKeyBtn(){
+  const btn=document.getElementById('keyBtn');if(!btn)return;
+  const ok=!!getApiKey();
+  btn.textContent=ok?'🔑 Key Set ✓':'🔑 Set API Key';
+  btn.style.color=ok?'#22c55e':'';
+  btn.style.borderColor=ok?'#22c55e':'';
+}
+
 </script>
 </body>
 </html>
