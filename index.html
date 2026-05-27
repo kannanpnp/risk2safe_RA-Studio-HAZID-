@@ -239,18 +239,6 @@ textarea{resize:vertical;min-height:72px}
 .ai-sug-label{font-size:10.5px;font-weight:800;color:var(--ai);text-transform:uppercase;letter-spacing:.4px}
 .ai-sug-apply{padding:3px 8px;background:var(--ai);color:white;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)}
 
-/* ── SETTINGS MODAL ── */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;display:none;align-items:center;justify-content:center}
-.modal-bg.open{display:flex}
-.modal{background:var(--white);border-radius:var(--rl);padding:28px;width:460px;max-width:95vw;box-shadow:var(--shl);color:var(--g800)}
-.modal h3{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:6px}
-.modal p{font-size:13px;color:var(--g500);line-height:1.6;margin-bottom:16px}
-.api-status{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--r);font-size:12.5px;font-weight:600;margin-bottom:14px}
-.api-status.set{background:#dcfce7;color:#16a34a}.api-status.unset{background:#fee2e2;color:#dc2626}
-.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
-.btn-cfg{display:flex;align-items:center;gap:5px;padding:5px 11px;background:var(--navy3);border:1px solid var(--navy4);border-radius:100px;color:var(--g300);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;transition:all .15s}
-.btn-cfg:hover{background:var(--navy4);color:var(--white)}
-
 /* ── NOTIFICATION ── */
 .notif{position:fixed;bottom:18px;right:18px;background:var(--navy);color:var(--white);padding:11px 15px;border-radius:var(--r);font-size:12.5px;box-shadow:var(--shl);z-index:999;display:none;align-items:center;gap:7px;border-left:3px solid var(--amber)}
 .notif.show{display:flex}
@@ -271,7 +259,6 @@ textarea{resize:vertical;min-height:72px}
   <div class="ai-header-badge">✦ AI Facilitated</div>
   <div class="proj-badge" id="projBadge">No project loaded — visit Setup tab</div>
   <div class="save-ind"><div class="save-dot" id="saveDot"></div><span id="saveText">Auto-save</span></div>
-  <button class="btn-cfg" onclick="openSettings()" id="apiKeyBtn">⚙ API Key</button>
   <button class="ai-fab" onclick="toggleAIPanel()">✦ AI Facilitator</button>
 </header>
 
@@ -463,97 +450,6 @@ textarea{resize:vertical;min-height:72px}
 </main>
 
 <!-- AI PANEL -->
-<!-- SETTINGS MODAL -->
-<div class="modal-bg" id="settingsModal">
-  <div class="modal" style="width:540px;max-height:90vh;overflow-y:auto">
-    <h3>⚙ AI Connection Settings</h3>
-    <p>Your API key is stored only in your browser's local storage and sent only to Anthropic (or your proxy). It is never stored on any server.</p>
-
-    <div class="api-status unset" id="apiStatusBadge">● No API key set — AI features disabled</div>
-
-    <!-- API KEY -->
-    <div class="fg">
-      <label>Anthropic API Key</label>
-      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" autocomplete="off">
-      <div class="fhint">Get your key at <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--ai)">console.anthropic.com → API Keys</a></div>
-    </div>
-
-    <!-- MODEL -->
-    <div class="fg">
-      <label>Model</label>
-      <select id="modelSelect">
-        <option value="claude-sonnet-4-6">Claude Sonnet 4.6 (recommended)</option>
-        <option value="claude-opus-4-6">Claude Opus 4.6 (most capable)</option>
-        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fastest)</option>
-      </select>
-    </div>
-
-    <!-- PROXY SECTION -->
-    <div style="background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:14px;margin-bottom:12px">
-      <div style="font-size:12.5px;font-weight:800;color:var(--navy);margin-bottom:6px">🔁 Proxy URL <span style="font-weight:400;color:var(--g500)">(required if api.anthropic.com is blocked on your network)</span></div>
-      <div class="fg" style="margin-bottom:8px">
-        <input id="proxyUrlInput" placeholder="https://my-worker.myname.workers.dev  (leave blank if direct access works)" style="font-size:13px">
-        <div class="fhint">If Test Connection fails, set up the free Cloudflare Worker below and paste its URL here.</div>
-      </div>
-
-      <!-- WORKER INSTRUCTIONS -->
-      <details style="margin-top:4px">
-        <summary style="font-size:12px;font-weight:700;color:var(--ai);cursor:pointer;padding:4px 0">▶ How to set up your free Cloudflare Worker proxy (2 minutes)</summary>
-        <div style="margin-top:10px;font-size:12px;color:var(--g700);line-height:1.7">
-          <ol style="padding-left:18px;margin-bottom:10px">
-            <li>Go to <a href="https://workers.cloudflare.com" target="_blank" style="color:var(--ai)">workers.cloudflare.com</a> — sign up free</li>
-            <li>Click <strong>Create Application → Create Worker</strong></li>
-            <li>Delete the default code, paste the code below, click <strong>Deploy</strong></li>
-            <li>Copy the Worker URL (e.g. <code style="background:var(--g200);padding:1px 4px;border-radius:3px">https://risk2safe.yourname.workers.dev</code>)</li>
-            <li>Paste that URL into the Proxy URL field above and click <strong>Save & Apply</strong></li>
-          </ol>
-          <div style="position:relative">
-            <pre id="workerCode" style="background:var(--navy);color:#a5f3fc;font-family:var(--mono);font-size:11px;padding:12px;border-radius:var(--r);overflow-x:auto;white-space:pre">addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
-async function handleRequest(request) {
-  const cors = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers':
-      'Content-Type,x-api-key,anthropic-version,anthropic-dangerous-allow-browser'
-  }
-  if (request.method === 'OPTIONS')
-    return new Response(null, { headers: cors })
-  const body = await request.text()
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': request.headers.get('x-api-key') || '',
-      'anthropic-version': request.headers.get('anthropic-version') || '2023-06-01',
-      'anthropic-dangerous-allow-browser': 'true'
-    },
-    body
-  })
-  const text = await resp.text()
-  return new Response(text, {
-    status: resp.status,
-    headers: { 'Content-Type': 'application/json', ...cors }
-  })
-}</pre>
-            <button onclick="copyWorkerCode(this)" style="position:absolute;top:8px;right:8px;padding:3px 9px;background:var(--amber);border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;color:var(--navy)">Copy</button>
-          </div>
-        </div>
-      </details>
-    </div>
-
-    <!-- TEST RESULT -->
-    <div id="testResult" style="display:none;padding:9px 12px;border-radius:var(--r);font-size:12.5px;font-weight:600;margin-bottom:10px"></div>
-
-    <div class="modal-foot">
-      <button class="btn btn-d btn-sm" onclick="clearApiKey()" style="margin-right:auto">Clear Key</button>
-      <button class="btn btn-g" onclick="testConnection(this)">Test Connection</button>
-      <button class="btn btn-g" onclick="closeSettings()">Cancel</button>
-      <button class="btn btn-p" onclick="saveApiKey()">Save & Apply</button>
-    </div>
-  </div>
-</div>
 
 <div class="ai-overlay" id="aiOverlay" onclick="toggleAIPanel()"></div>
 <div class="ai-panel" id="aiPanel">
@@ -660,7 +556,7 @@ let nextId=1;
 document.addEventListener('DOMContentLoaded',()=>{
   loadStorage();
   renderCats();renderWS();renderMatrix();renderSummary();renderVideos();
-  updateBadges();updateProjBadge();updateApiKeyBtn();
+  updateBadges();updateProjBadge();
   document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
   document.addEventListener('keydown',e=>{
     if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();exportJSON();}
@@ -989,55 +885,6 @@ function loadStorage(){
   }catch(e){console.warn('Load failed:',e);}
 }
 
-// ═══════════════ API KEY SETTINGS ═══════════════
-function getApiKey(){return localStorage.getItem('r2s_apikey')||'';}
-function getModel(){return localStorage.getItem('r2s_model')||'claude-sonnet-4-6';}
-function getProxy(){return (localStorage.getItem('r2s_proxy')||'').trim();}
-function getEndpoint(){return getProxy()||'https://api.anthropic.com/v1/messages';}
-
-function openSettings(){
-  const key=getApiKey();
-  document.getElementById('apiKeyInput').value=key;
-  document.getElementById('modelSelect').value=getModel();
-  document.getElementById('proxyUrlInput').value=getProxy();
-  const badge=document.getElementById('apiStatusBadge');
-  badge.textContent=key?'● API key is set — AI features enabled':'● No API key set — AI features disabled';
-  badge.className='api-status '+(key?'set':'unset');
-  document.getElementById('testResult').style.display='none';
-  document.getElementById('settingsModal').classList.add('open');
-}
-function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
-function saveApiKey(){
-  const key=document.getElementById('apiKeyInput').value.trim();
-  const model=document.getElementById('modelSelect').value;
-  const proxy=document.getElementById('proxyUrlInput').value.trim();
-  if(!key){notify('⚠ Please enter an API key');return;}
-  localStorage.setItem('r2s_apikey',key);
-  localStorage.setItem('r2s_model',model);
-  if(proxy)localStorage.setItem('r2s_proxy',proxy);else localStorage.removeItem('r2s_proxy');
-  updateApiKeyBtn();closeSettings();
-  notify('✓ Settings saved — AI features ready');
-}
-function clearApiKey(){
-  localStorage.removeItem('r2s_apikey');
-  document.getElementById('apiKeyInput').value='';
-  const badge=document.getElementById('apiStatusBadge');
-  badge.textContent='● No API key set — AI features disabled';
-  badge.className='api-status unset';
-  updateApiKeyBtn();notify('✓ API key cleared');
-}
-function updateApiKeyBtn(){
-  const btn=document.getElementById('apiKeyBtn');const key=getApiKey();const proxy=getProxy();
-  if(btn){
-    btn.textContent=key?(proxy?'✓ API + Proxy':'✓ API Key Set'):'⚙ API Key';
-    btn.style.color=key?'#22c55e':'';btn.style.borderColor=key?'#22c55e':'';
-  }
-}
-function copyWorkerCode(btn){
-  const code=document.getElementById('workerCode').textContent;
-  navigator.clipboard.writeText(code).then(()=>{btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);});
-}
-
 // ═══════════════ AI PANEL ═══════════════
 let aiPanelOpen=false;
 let chatHistory=[];
@@ -1060,66 +907,25 @@ const AI_SYSTEM=`You are an expert HAZID (Hazard Identification Study) facilitat
 Your role: assist the HAZID team by identifying hazards, assessing risks, developing effective control measures, and facilitating ALARP demonstration. Be concise, practical, and specific. Use industry-standard terminology. When suggesting risk ratings, justify your reasoning.`;
 
 async function callAI(userMsg){
-  const key=getApiKey();
-  if(!key)throw new Error('No API key set — click "⚙ API Key" in the header to add yours.');
-  let resp;
-  try{
-    resp=await fetch(getEndpoint(),{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
-      body:JSON.stringify({model:getModel(),max_tokens:1000,system:AI_SYSTEM,messages:[{role:'user',content:userMsg}]})
-    });
-  }catch(e){
-    const ep=getEndpoint();const direct=!getProxy();
-    throw new Error(direct?'Cannot reach api.anthropic.com — the endpoint may be blocked on your network. Open ⚙ API Key settings and set up the Cloudflare Worker proxy.':'Cannot reach your proxy at '+ep+' — check the URL is correct and the Worker is deployed.');
-  }
-  if(!resp.ok){let msg=`API error ${resp.status}`;try{const e=await resp.json();msg=e.error?.message||msg;}catch{}throw new Error(msg);}
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:AI_SYSTEM,messages:[{role:'user',content:userMsg}]})
+  });
+  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`API error ${resp.status}`);}
   const d=await resp.json();return d.content[0].text;
 }
 
 async function callAIWithHistory(userMsg){
-  const key=getApiKey();
-  if(!key)throw new Error('No API key set — click "⚙ API Key" in the header to add yours.');
   chatHistory.push({role:'user',content:userMsg});
-  let resp;
-  try{
-    resp=await fetch(getEndpoint(),{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
-      body:JSON.stringify({model:getModel(),max_tokens:1000,system:AI_SYSTEM,messages:chatHistory})
-    });
-  }catch(e){
-    chatHistory.pop();
-    throw new Error(getProxy()?'Cannot reach proxy — check the URL.':'Cannot reach api.anthropic.com — set up the Cloudflare Worker proxy in ⚙ settings.');
-  }
-  if(!resp.ok){chatHistory.pop();let msg=`API error ${resp.status}`;try{const e=await resp.json();msg=e.error?.message||msg;}catch{}throw new Error(msg);}
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:AI_SYSTEM,messages:chatHistory})
+  });
+  if(!resp.ok){chatHistory.pop();const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`API error ${resp.status}`);}
   const d=await resp.json();const reply=d.content[0].text;
   chatHistory.push({role:'assistant',content:reply});return reply;
-}
-
-async function testConnection(btn){
-  const key=document.getElementById('apiKeyInput').value.trim();
-  const model=document.getElementById('modelSelect').value;
-  const proxyInput=document.getElementById('proxyUrlInput').value.trim();
-  const endpoint=proxyInput||'https://api.anthropic.com/v1/messages';
-  const res=document.getElementById('testResult');
-  if(!key){res.style.display='block';res.style.background='#fee2e2';res.style.color='#dc2626';res.textContent='⚠ Enter an API key first';return;}
-  btn.disabled=true;btn.textContent='Testing…';res.style.display='none';
-  try{
-    const resp=await fetch(endpoint,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
-      body:JSON.stringify({model,max_tokens:20,messages:[{role:'user',content:'Reply with one word: OK'}]})
-    });
-    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`);}
-    const d=await resp.json();const txt=d.content?.[0]?.text||'';
-    res.style.display='block';res.style.background='#dcfce7';res.style.color='#16a34a';
-    res.textContent=`✓ Connected successfully${proxyInput?' (via proxy)':''} — model replied: "${txt.trim()}"`;
-  }catch(e){
-    res.style.display='block';res.style.background='#fee2e2';res.style.color='#dc2626';
-    res.textContent=`✗ ${e.message||'Failed to fetch — endpoint unreachable or blocked. Set up the Cloudflare Worker proxy.'}`;
-  }
-  btn.disabled=false;btn.textContent='Test Connection';
 }
 
 function projCtx(){
