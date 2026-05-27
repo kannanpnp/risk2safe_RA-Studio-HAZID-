@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk2Safe — HAZID Risk Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0a0e1c; --navy2:#141828; --navy3:#1e2438; --navy4:#252b40;
+  --amber:#f59e0b; --amber-d:#d97706;
+  --white:#fff; --g50:#f8fafc; --g100:#f1f5f9; --g200:#e2e8f0;
+  --g300:#cbd5e1; --g400:#94a3b8; --g500:#64748b; --g600:#475569;
+  --g700:#334155; --g800:#1e293b;
+  --cat1:#dc2626; --cat2:#ea580c; --cat3:#ca8a04; --cat4:#16a34a;
+  --ai:#7c3aed; --ai2:#6d28d9; --ai-l:#f5f3ff; --ai-m:#c4b5fd;
+  --r:8px; --rl:12px;
+  --sh:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.08);
+  --shm:0 4px 6px rgba(0,0,0,.1); --shl:0 10px 20px rgba(0,0,0,.15);
+  --font:'Barlow',system-ui,sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--navy);color:var(--white);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+.app-header{background:var(--navy);border-bottom:2px solid var(--amber);padding:0 20px;display:flex;align-items:center;gap:12px;height:56px;position:sticky;top:0;z-index:100;flex-shrink:0}
+.logo-box{width:34px;height:34px;background:var(--amber);border-radius:7px;display:grid;place-items:center;color:var(--navy);font-weight:800;font-size:12px;flex-shrink:0}
+.logo-text{font-size:17px;font-weight:700}.logo-text span{color:var(--amber)}
+.ai-header-badge{background:linear-gradient(135deg,var(--ai),var(--ai2));border-radius:4px;padding:2px 9px;font-size:10px;font-weight:800;color:var(--white);letter-spacing:.4px;display:flex;align-items:center;gap:4px}
+.proj-badge{margin-left:auto;background:var(--navy3);border:1px solid var(--navy4);padding:4px 12px;border-radius:100px;font-size:11px;color:var(--g300);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-badge span{color:var(--amber);font-weight:600}
+.save-ind{font-size:11px;color:var(--g500);display:flex;align-items:center;gap:5px;flex-shrink:0}
+.save-dot{width:7px;height:7px;border-radius:50%;background:var(--g600);transition:background .4s}
+.save-dot.ok{background:#22c55e}
+.ai-fab{display:flex;align-items:center;gap:6px;padding:6px 13px;background:linear-gradient(135deg,var(--ai),var(--ai2));border:none;border-radius:100px;color:var(--white);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s;flex-shrink:0}
+.ai-fab:hover{opacity:.9}
+
+/* ── TABS ── */
+.tab-nav{background:var(--navy2);border-bottom:1px solid var(--navy3);display:flex;overflow-x:auto;scrollbar-width:none;padding:0 12px;flex-shrink:0}
+.tab-nav::-webkit-scrollbar{display:none}
+.tab-btn{display:flex;align-items:center;gap:5px;padding:13px 14px;border:none;background:none;color:var(--g400);font-family:var(--font);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2.5px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s}
+.tab-btn:hover{color:var(--g200)}.tab-btn.active{color:var(--amber);border-bottom-color:var(--amber)}
+.tab-icon{font-size:15px}
+.tab-badge{background:var(--amber);color:var(--navy);font-size:10px;font-weight:800;padding:1px 5px;border-radius:100px}
+
+/* ── CONTENT ── */
+.tab-content{flex:1;background:var(--g50);color:var(--g800);overflow-y:auto;min-height:0}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.ph{background:var(--white);border-bottom:1px solid var(--g200);padding:18px 24px}
+.ph h2{font-size:19px;font-weight:700;color:var(--navy)}.ph p{font-size:12.5px;color:var(--g500);margin-top:3px}
+.pb{padding:20px 24px}
+
+/* ── STEP BAR ── */
+.step-bar{display:flex;align-items:center;gap:3px;padding:10px 24px;background:var(--white);border-bottom:1px solid var(--g100);overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.step-bar::-webkit-scrollbar{display:none}
+.sn{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.sc{width:22px;height:22px;border-radius:50%;background:var(--g200);color:var(--g500);font-size:10px;font-weight:700;display:grid;place-items:center;flex-shrink:0}
+.sn.active .sc{background:var(--amber);color:var(--navy)}
+.sl{font-size:11px;color:var(--g400)}.sn.active .sl{color:var(--navy);font-weight:600}
+.scon{width:16px;height:1px;background:var(--g200);flex-shrink:0}
+
+/* ── CARDS ── */
+.card{background:var(--white);border:1px solid var(--g200);border-radius:var(--rl);padding:18px;margin-bottom:14px;box-shadow:var(--sh)}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ct{font-size:14.5px;font-weight:700;color:var(--navy)}
+
+/* ── FORMS ── */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+label{font-size:11px;font-weight:700;color:var(--g600);text-transform:uppercase;letter-spacing:.5px}
+input,textarea,select{font-family:var(--font);font-size:13.5px;color:var(--g800);background:var(--g50);border:1px solid var(--g300);border-radius:var(--r);padding:8px 11px;transition:border-color .15s,box-shadow .15s;width:100%}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.15);background:var(--white)}
+textarea{resize:vertical;min-height:72px}
+.fhint{font-size:11px;color:var(--g400);font-style:italic;margin-top:2px}
+.field-row{display:flex;gap:6px;align-items:flex-start}
+.field-row textarea,.field-row input{flex:1}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border:none;border-radius:var(--r);font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap}
+.btn-p{background:var(--amber);color:var(--navy)}.btn-p:hover{background:var(--amber-d)}
+.btn-s{background:var(--navy);color:var(--white)}.btn-s:hover{background:var(--navy3)}
+.btn-g{background:transparent;color:var(--g600);border:1px solid var(--g300)}.btn-g:hover{background:var(--g100)}
+.btn-d{background:#fee2e2;color:var(--cat1)}.btn-d:hover{background:#fca5a5}
+.btn-ai{background:linear-gradient(135deg,var(--ai),var(--ai2));color:var(--white)}.btn-ai:hover{opacity:.9}
+.btn-ai-ghost{background:var(--ai-l);color:var(--ai);border:1px solid var(--ai-m)}.btn-ai-ghost:hover{background:var(--ai-m)}
+.btn-sm{padding:4px 9px;font-size:11.5px}.btn-lg{padding:11px 22px;font-size:14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── AI INLINE BUTTONS ── */
+.ai-btn-inline{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--ai-l);border:1px solid var(--ai-m);border-radius:5px;color:var(--ai);font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;flex-shrink:0;margin-top:2px;font-family:var(--font)}
+.ai-btn-inline:hover{background:var(--ai-m)}.ai-btn-inline:disabled{opacity:.5;cursor:not-allowed}
+.spin{display:inline-block;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── RISK BADGES ── */
+.rb{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:100px;font-size:11.5px;font-weight:700;font-family:var(--mono)}
+.rb.c1{background:var(--cat1);color:var(--white)}.rb.c2{background:var(--cat2);color:var(--white)}
+.rb.c3{background:var(--cat3);color:var(--navy)}.rb.c4{background:var(--cat4);color:var(--white)}
+.rb.cn{background:var(--g200);color:var(--g500)}
+
+/* ── CATEGORIES ── */
+.cg-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--navy);margin:0 0 8px;padding-left:2px}
+.cg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:7px;margin-bottom:18px}
+.ci{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--white);border:1px solid var(--g200);border-radius:var(--r);cursor:pointer;transition:all .12s}
+.ci:hover{border-color:var(--amber)}.ci.app{border-color:var(--amber);background:#fffbeb}.ci.na{opacity:.5;background:var(--g50)}
+.ci-icon{font-size:18px;flex-shrink:0}.ci-lbl{font-size:12.5px;font-weight:500;flex:1;line-height:1.3}
+.ci-btns{display:flex;gap:3px;margin-left:auto;flex-shrink:0}
+.ct-btn{width:26px;height:19px;border:none;border-radius:3px;font-size:9.5px;font-weight:800;cursor:pointer;transition:all .12s}
+.yes-btn{background:var(--g200);color:var(--g600)}.ci.app .yes-btn{background:var(--amber);color:var(--navy)}
+.na-btn{background:var(--g200);color:var(--g600)}.ci.na .na-btn{background:var(--g500);color:var(--white)}
+
+/* ── WORKSHEET ── */
+.ws-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.sc-card{background:var(--white);border:1px solid var(--g200);border-radius:var(--rl);margin-bottom:10px;overflow:hidden;box-shadow:var(--sh);transition:border-color .15s}
+.sc-card.exp{border-color:var(--amber);border-left:3px solid var(--amber)}
+.sc-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;transition:background .1s}
+.sc-head:hover{background:var(--g50)}
+.sc-num{width:26px;height:26px;background:var(--navy);color:var(--amber);border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;font-family:var(--mono);flex-shrink:0}
+.sc-title{flex:1;font-size:13.5px;font-weight:600;color:var(--navy)}
+.sc-meta{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.sc-chev{color:var(--g400);font-size:11px;transition:transform .2s;flex-shrink:0}
+.sc-card.exp .sc-chev{transform:rotate(180deg)}
+.sc-body{display:none;padding:0 14px 14px;border-top:1px solid var(--g100)}
+.sc-card.exp .sc-body{display:block}
+.ss{background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:12px;margin-top:10px}
+.ss.res{border-color:var(--amber);background:#fffbeb}
+.ss-title{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--g500);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.sp{background:var(--navy);color:var(--amber);font-size:8.5px;font-weight:800;padding:1px 6px;border-radius:100px}
+
+/* ── RISK SELECTOR ── */
+.rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.risk-result{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--g100);border-radius:var(--r);margin-top:8px;border:1px solid var(--g200)}
+.rr-cell{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--navy)}
+.rr-info{font-size:11px;color:var(--g500);line-height:1.4}
+
+/* ── ALARP ── */
+.alarp-grp{display:flex;gap:6px;margin-top:5px}
+.alarp-b{padding:5px 12px;border:2px solid var(--g200);border-radius:var(--r);font-size:12px;font-weight:700;cursor:pointer;background:var(--white);transition:all .12s}
+.alarp-b.alarp{border-color:var(--cat4);color:var(--cat4)}.alarp-b.alarp.on{background:var(--cat4);color:var(--white)}
+.alarp-b.act{border-color:var(--cat1);color:var(--cat1)}.alarp-b.act.on{background:var(--cat1);color:var(--white)}
+
+/* ── RISK MATRIX ── */
+.mat-wrap{overflow-x:auto;padding-bottom:8px}
+.rm-table{border-collapse:separate;border-spacing:3px;margin:0 auto}
+.rm-table th,.rm-table td{text-align:center;vertical-align:middle;font-size:11.5px;font-weight:700;border-radius:5px}
+.rm-hrow th{background:var(--navy);color:var(--amber);font-size:10px;padding:6px;min-width:72px;height:52px}
+.rm-slab{background:var(--navy);color:var(--white);font-size:10.5px;padding:5px 8px;text-align:left!important;width:130px;line-height:1.3}
+.rm-cell{cursor:default;position:relative;transition:transform .1s;min-width:72px;height:64px}
+.rm-cell:hover{transform:scale(1.06);z-index:5;box-shadow:var(--shm)}
+.rm-cell.c1{background:var(--cat1);color:var(--white)}.rm-cell.c2{background:var(--cat2);color:var(--white)}
+.rm-cell.c3{background:var(--cat3);color:var(--navy)}.rm-cell.c4{background:var(--cat4);color:var(--white)}
+.rm-lbl{font-family:var(--mono);font-size:13px;font-weight:700;display:block}
+.rm-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;margin-top:3px;padding:0 4px}
+.rdot{width:9px;height:9px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5)}
+.rdot.ini{background:rgba(0,0,0,.65)}.rdot.res{background:rgba(255,255,255,.35)}
+
+/* ── SUMMARY ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{background:var(--white);border:1px solid var(--g200);border-radius:var(--r);padding:14px;text-align:center}
+.stat-val{font-size:34px;font-weight:800;font-family:var(--mono);color:var(--navy);line-height:1}
+.stat-lbl{font-size:11.5px;color:var(--g500);margin-top:3px}
+
+/* ── VIDEOS ── */
+.vid-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.vid-card{background:var(--white);border:1px solid var(--g200);border-radius:var(--rl);overflow:hidden;transition:box-shadow .2s,transform .2s}
+.vid-card:hover{box-shadow:var(--shl);transform:translateY(-3px)}
+.vid-thumb{background:linear-gradient(135deg,var(--navy2) 0%,var(--navy3) 100%);height:110px;display:flex;align-items:center;justify-content:center;position:relative;border-bottom:1px solid var(--navy4)}
+.vid-num{font-family:var(--mono);font-size:40px;font-weight:700;color:var(--amber);opacity:.2}
+.vid-play{position:absolute;width:42px;height:42px;background:var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--navy);font-size:16px;text-decoration:none;transition:transform .15s}
+.vid-play:hover{transform:scale(1.1)}
+.vid-info{padding:11px}
+.vid-part{font-size:10.5px;font-weight:800;color:var(--amber);text-transform:uppercase;letter-spacing:.5px}
+.vid-topic{font-size:13px;font-weight:700;color:var(--navy);margin-top:2px;line-height:1.3}
+.vid-link{display:inline-flex;align-items:center;gap:4px;margin-top:7px;font-size:11.5px;color:#2563eb;text-decoration:none;font-weight:600}
+.vid-link:hover{text-decoration:underline}
+
+/* ── EXPORT ── */
+.exp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.exp-card{background:var(--white);border:1px solid var(--g200);border-radius:var(--rl);padding:18px;display:flex;flex-direction:column;gap:9px}
+.exp-icon{font-size:30px}.exp-title{font-size:14px;font-weight:700;color:var(--navy)}
+.exp-desc{font-size:12.5px;color:var(--g500);flex:1;line-height:1.5}
+
+/* ── TABLE ── */
+.dt{width:100%;border-collapse:collapse;font-size:12.5px}
+.dt th{background:var(--navy);color:var(--amber);padding:9px 11px;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.dt td{padding:9px 11px;border-bottom:1px solid var(--g100);color:var(--g700);vertical-align:top}
+.dt tr:hover td{background:var(--g50)}
+
+/* ── TAGS ── */
+.tag{display:inline-flex;padding:2px 7px;border-radius:100px;font-size:10.5px;font-weight:700}
+.tag.alarp{background:#dcfce7;color:#16a34a}.tag.action{background:#fee2e2;color:#dc2626}.tag.pend{background:#f3f4f6;color:#6b7280}
+
+/* ── LEGEND ── */
+.rl-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.rl-item{display:flex;align-items:center;gap:5px;padding:4px 9px;border-radius:var(--r);font-size:11.5px;font-weight:600}
+.rl-dot{width:9px;height:9px;border-radius:50%}
+
+/* ── EMPTY ── */
+.es{text-align:center;padding:56px 20px}
+.es-icon{font-size:44px;margin-bottom:10px}
+.es-title{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:5px}
+.es-desc{font-size:13px;color:var(--g500);margin-bottom:18px}
+
+/* ── AI CHAT PANEL ── */
+.ai-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none}
+.ai-overlay.open{display:block}
+.ai-panel{position:fixed;right:0;top:0;bottom:0;width:400px;max-width:95vw;background:var(--navy);display:flex;flex-direction:column;z-index:201;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(0,0,0,.4)}
+.ai-panel.open{transform:translateX(0)}
+.aip-header{background:linear-gradient(135deg,var(--ai),var(--ai2));padding:16px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.aip-title{font-size:15px;font-weight:800;flex:1}
+.aip-sub{font-size:11px;opacity:.8;margin-top:1px}
+.aip-close{width:28px;height:28px;background:rgba(255,255,255,.2);border:none;border-radius:50%;color:white;font-size:16px;cursor:pointer;display:grid;place-items:center;flex-shrink:0}
+.aip-close:hover{background:rgba(255,255,255,.3)}
+.aip-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.aip-msgs::-webkit-scrollbar{width:4px}.aip-msgs::-webkit-scrollbar-thumb{background:var(--navy3);border-radius:2px}
+.chat-msg{max-width:88%;padding:10px 13px;border-radius:var(--rl);font-size:13px;line-height:1.55}
+.chat-msg.user{background:var(--amber);color:var(--navy);margin-left:auto;border-bottom-right-radius:3px;font-weight:500}
+.chat-msg.ai{background:var(--navy3);color:var(--white);border-bottom-left-radius:3px;border:1px solid var(--navy4)}
+.chat-msg.ai code{font-family:var(--mono);font-size:11.5px;background:var(--navy4);padding:1px 5px;border-radius:3px}
+.chat-typing{display:flex;gap:5px;padding:10px 13px;background:var(--navy3);border-radius:var(--rl);border-bottom-left-radius:3px;width:fit-content}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g400);animation:bounce .9s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.aip-chips{padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--navy3);flex-shrink:0}
+.chip{padding:4px 10px;background:var(--navy3);border:1px solid var(--navy4);border-radius:100px;font-size:11.5px;color:var(--g300);cursor:pointer;transition:all .12s}
+.chip:hover{background:var(--ai);border-color:var(--ai);color:white}
+.aip-input{padding:12px 16px;border-top:1px solid var(--navy3);display:flex;gap:8px;flex-shrink:0}
+.aip-input textarea{flex:1;background:var(--navy3);border:1px solid var(--navy4);color:var(--white);border-radius:var(--r);font-size:13px;min-height:44px;max-height:100px;padding:8px 11px;resize:none}
+.aip-input textarea::placeholder{color:var(--g500)}
+.aip-input textarea:focus{outline:none;border-color:var(--ai);background:var(--navy4)}
+.aip-send{width:42px;height:42px;background:var(--ai);border:none;border-radius:var(--r);color:white;font-size:18px;cursor:pointer;flex-shrink:0;display:grid;place-items:center;transition:opacity .15s}
+.aip-send:hover{opacity:.85}.aip-send:disabled{opacity:.4}
+
+/* ── AI SUGGESTION TOAST ── */
+.ai-suggestion{background:var(--ai-l);border:1px solid var(--ai-m);border-radius:var(--r);padding:10px 12px;font-size:12.5px;color:var(--g700);margin-top:6px;line-height:1.5;display:none}
+.ai-suggestion.show{display:block}
+.ai-sug-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.ai-sug-label{font-size:10.5px;font-weight:800;color:var(--ai);text-transform:uppercase;letter-spacing:.4px}
+.ai-sug-apply{padding:3px 8px;background:var(--ai);color:white;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)}
+
+/* ── NOTIFICATION ── */
+.notif{position:fixed;bottom:18px;right:18px;background:var(--navy);color:var(--white);padding:11px 15px;border-radius:var(--r);font-size:12.5px;box-shadow:var(--shl);z-index:999;display:none;align-items:center;gap:7px;border-left:3px solid var(--amber)}
+.notif.show{display:flex}
+
+/* ── PRINT ── */
+@media print{.app-header,.tab-nav,.ws-bar,.btn,.notif,.step-bar,.ai-overlay,.ai-panel,.ai-fab{display:none!important}.tab-panel{display:block!important}.sc-body{display:block!important}body{background:white;color:black}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:680px){.fg2,.fg3,.rs-grid{grid-template-columns:1fr}.pb{padding:14px}.stat-grid{grid-template-columns:1fr 1fr}.vid-grid{grid-template-columns:1fr}.exp-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="logo-box">R2S</div>
+  <div class="logo-text"><span>Risk2Safe</span> HAZID Risk Assessment</div>
+  <div class="ai-header-badge">✦ AI Facilitated</div>
+  <div class="proj-badge" id="projBadge">No project loaded — visit Setup tab</div>
+  <div class="save-ind"><div class="save-dot" id="saveDot"></div><span id="saveText">Auto-save</span></div>
+  <button class="ai-fab" onclick="toggleAIPanel()">✦ AI Facilitator</button>
+</header>
+
+<!-- TABS -->
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="setup"><span class="tab-icon">📋</span>Setup</button>
+  <button class="tab-btn" data-tab="categories"><span class="tab-icon">🏷️</span>Categories<span class="tab-badge" id="catBadge">0</span></button>
+  <button class="tab-btn" data-tab="worksheet"><span class="tab-icon">📝</span>Worksheet<span class="tab-badge" id="wsBadge">0</span></button>
+  <button class="tab-btn" data-tab="matrix"><span class="tab-icon">🎯</span>Risk Matrix</button>
+  <button class="tab-btn" data-tab="summary"><span class="tab-icon">📊</span>Summary</button>
+  <button class="tab-btn" data-tab="resources"><span class="tab-icon">📹</span>Resources<span class="tab-badge">25</span></button>
+  <button class="tab-btn" data-tab="export"><span class="tab-icon">💾</span>Export</button>
+</nav>
+
+<main class="tab-content">
+
+<!-- ══ SETUP ══ -->
+<div class="tab-panel active" id="tab-setup">
+  <div class="ph"><h2>Project Setup</h2><p>Define the study details. The AI uses this context throughout the workshop to give relevant, site-specific assistance.</p></div>
+  <div class="pb">
+    <div class="card">
+      <div class="ch"><div class="ct">📁 Study Information</div></div>
+      <div class="fg2">
+        <div class="fg"><label>Project / Facility Name *</label><input id="projectName" placeholder="e.g., Hazar Terminal Expansion" oninput="saveData()"></div>
+        <div class="fg"><label>Study Reference No.</label><input id="studyRef" placeholder="e.g., HAZID-2025-001" oninput="saveData()"></div>
+        <div class="fg"><label>Location / Site</label><input id="location" placeholder="e.g., Hazar, Turkmenistan" oninput="saveData()"></div>
+        <div class="fg"><label>Study Date</label><input type="date" id="studyDate" oninput="saveData()"></div>
+        <div class="fg"><label>Facilitator / Study Leader</label><input id="facilitator" placeholder="Name and designation" oninput="saveData()"></div>
+        <div class="fg"><label>Scribe / Recorder</label><input id="scribe" placeholder="Name of scribe" oninput="saveData()"></div>
+        <div class="fg full" style="grid-column:1/-1">
+          <label>Scope & Objectives</label>
+          <div class="field-row">
+            <textarea id="scope" placeholder="Describe the scope, objectives and study boundaries..." rows="3" oninput="saveData()"></textarea>
+            <button class="ai-btn-inline" onclick="aiDraftScope(this)" title="AI will draft scope based on project name, location and node">✦ AI Draft</button>
+          </div>
+        </div>
+        <div class="fg full" style="grid-column:1/-1">
+          <label>Study Node / System Description</label>
+          <textarea id="studyNode" placeholder="e.g., Crude oil storage and loading operations..." rows="2" oninput="saveData()"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">👥 Team Members</div></div>
+      <div class="fg3">
+        <div class="fg"><label>Member 1</label><input id="team1" placeholder="Name — Role / Department" oninput="saveData()"></div>
+        <div class="fg"><label>Member 2</label><input id="team2" placeholder="Name — Role / Department" oninput="saveData()"></div>
+        <div class="fg"><label>Member 3</label><input id="team3" placeholder="Name — Role / Department" oninput="saveData()"></div>
+        <div class="fg"><label>Member 4</label><input id="team4" placeholder="Name — Role / Department" oninput="saveData()"></div>
+        <div class="fg"><label>Member 5</label><input id="team5" placeholder="Name — Role / Department" oninput="saveData()"></div>
+        <div class="fg"><label>Member 6</label><input id="team6" placeholder="Name — Role / Department" oninput="saveData()"></div>
+        <div class="fg full" style="grid-column:1/-1"><label>Additional Participants / Observers</label><textarea id="teamExtra" rows="2" oninput="saveData()"></textarea></div>
+      </div>
+    </div>
+    <div class="card" style="border:1px solid var(--ai-m);background:var(--ai-l)">
+      <div class="ch"><div class="ct" style="color:var(--ai)">✦ AI Facilitation — How It Works</div></div>
+      <div class="fg2">
+        <div style="font-size:13px;color:var(--g700);line-height:1.7">
+          The AI facilitator is integrated throughout this tool:<br>
+          <strong>Setup:</strong> Draft scope from project context<br>
+          <strong>Categories:</strong> AI recommends applicable categories<br>
+          <strong>Worksheet:</strong> Generate scenarios, suggest causes, controls and recommendations per scenario<br>
+          <strong>Chat:</strong> Ask anything about HAZID methodology
+        </div>
+        <div style="font-size:13px;color:var(--g700);line-height:1.7">
+          <strong>Risk Matrix:</strong> 6×6 semi-quantitative matrix<br>
+          &nbsp;• 6 Severity levels: Notable (1) → Disastrous (6)<br>
+          &nbsp;• 6 Likelihood levels: Rare (A) → Almost Certain (F)<br>
+          &nbsp;• 4 Categories: Low → Intolerable<br>
+          &nbsp;• Cell labels e.g. <strong>3C</strong> = Severity 3 × Likelihood C
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CATEGORIES ══ -->
+<div class="tab-panel" id="tab-categories">
+  <div class="ph"><h2>Step 1 — Hazard Categories</h2><p>Mark each category as Applicable (✓) or N/A. AI can recommend categories based on your project details.</p></div>
+  <div style="padding:10px 24px;background:var(--white);border-bottom:1px solid var(--g100);display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button class="btn btn-p btn-sm" onclick="markAll('applicable')">✓ All Applicable</button>
+    <button class="btn btn-g btn-sm" onclick="markAll('na')">✗ All N/A</button>
+    <button class="btn btn-g btn-sm" onclick="markAll('reset')">↺ Reset</button>
+    <button class="btn btn-ai btn-sm" id="aiRecCatBtn" onclick="aiRecommendCats(this)">✦ AI Recommend Categories</button>
+    <span style="margin-left:auto;font-size:11.5px;color:var(--g500)" id="catSumText"></span>
+  </div>
+  <div class="pb" id="catPanel"></div>
+</div>
+
+<!-- ══ WORKSHEET ══ -->
+<div class="tab-panel" id="tab-worksheet">
+  <div class="ph"><h2>Steps 2–7 — HAZID Worksheet</h2><p>Document each hazard scenario: initial risk → controls → residual risk → acceptability. Use AI to accelerate each step.</p></div>
+  <div class="step-bar">
+    <div class="sn active"><div class="sc">2</div><span class="sl">Initial Risk</span></div><div class="scon"></div>
+    <div class="sn active"><div class="sc">3</div><span class="sl">Preventative</span></div><div class="scon"></div>
+    <div class="sn active"><div class="sc">4</div><span class="sl">Mitigative</span></div><div class="scon"></div>
+    <div class="sn active"><div class="sc">5</div><span class="sl">Administrative</span></div><div class="scon"></div>
+    <div class="sn active"><div class="sc">6</div><span class="sl">Residual Risk</span></div><div class="scon"></div>
+    <div class="sn active"><div class="sc">7</div><span class="sl">Acceptability</span></div>
+  </div>
+  <div class="pb">
+    <div class="ws-bar">
+      <button class="btn btn-p" onclick="addScenario()">+ Add Scenario</button>
+      <button class="btn btn-ai" id="aiGenBtn" onclick="aiGenerateScenarios(this)">✦ AI Generate Scenarios</button>
+      <input style="flex:1;max-width:260px" type="search" placeholder="🔍 Filter..." id="scSearch" oninput="filterScenarios()">
+      <select id="filterCat" style="width:180px;font-size:12.5px" onchange="filterScenarios()"><option value="">All Categories</option></select>
+      <select id="filterRisk" style="width:150px;font-size:12.5px" onchange="filterScenarios()">
+        <option value="">All Risk Levels</option>
+        <option value="1">Cat 1 – Intolerable</option>
+        <option value="2">Cat 2 – High</option>
+        <option value="3">Cat 3 – Medium</option>
+        <option value="4">Cat 4 – Low</option>
+      </select>
+    </div>
+    <div id="wsContainer"></div>
+  </div>
+</div>
+
+<!-- ══ MATRIX ══ -->
+<div class="tab-panel" id="tab-matrix">
+  <div class="ph"><h2>Risk Matrix (6×6)</h2><p>Scenarios plotted automatically. ⚫ = Initial risk &nbsp;|&nbsp; ⚪ = Residual risk after controls.</p></div>
+  <div class="pb">
+    <div class="rl-row">
+      <div class="rl-item" style="background:#fee2e2;border:1px solid #fca5a5"><div class="rl-dot" style="background:var(--cat1)"></div><strong>Cat 1</strong> — Intolerable</div>
+      <div class="rl-item" style="background:#fff7ed;border:1px solid #fdba74"><div class="rl-dot" style="background:var(--cat2)"></div><strong>Cat 2</strong> — High</div>
+      <div class="rl-item" style="background:#fefce8;border:1px solid #fde047"><div class="rl-dot" style="background:var(--cat3)"></div><strong>Cat 3</strong> — Medium</div>
+      <div class="rl-item" style="background:#f0fdf4;border:1px solid #86efac"><div class="rl-dot" style="background:var(--cat4)"></div><strong>Cat 4</strong> — Low</div>
+    </div>
+    <div class="card mat-wrap"><div id="matrixDisplay"></div></div>
+    <div class="fg2">
+      <div class="card"><div class="ct" style="margin-bottom:10px">📉 Severity Reference</div>
+        <table class="dt"><thead><tr><th>#</th><th>Level</th><th>H&S Impact</th></tr></thead><tbody>
+          <tr><td><b>6</b></td><td><span class="rb c1">Disastrous</span></td><td>Multiple fatalities (&gt;10)</td></tr>
+          <tr><td><b>5</b></td><td><span class="rb c1">Catastrophic</span></td><td>Multiple fatalities (≤10) or PTD</td></tr>
+          <tr><td><b>4</b></td><td><span class="rb c2">Major</span></td><td>Single fatality / PTD / serious injury</td></tr>
+          <tr><td><b>3</b></td><td><span class="rb c2">Serious</span></td><td>Serious injuries (reversible)</td></tr>
+          <tr><td><b>2</b></td><td><span class="rb c3">Minor</span></td><td>Minor injuries (weeks–months)</td></tr>
+          <tr><td><b>1</b></td><td><span class="rb c4">Notable</span></td><td>Slight injuries / short-term effects</td></tr>
+        </tbody></table>
+      </div>
+      <div class="card"><div class="ct" style="margin-bottom:10px">📊 Likelihood Reference</div>
+        <table class="dt"><thead><tr><th>Letter</th><th>Level</th><th>Frequency / Criteria</th></tr></thead><tbody>
+          <tr><td><b>A</b></td><td>Rare</td><td>&lt; 10⁻⁶/yr — Never in industry</td></tr>
+          <tr><td><b>B</b></td><td>Unlikely</td><td>10⁻⁵/yr — World-wide, not Group</td></tr>
+          <tr><td><b>C</b></td><td>Possible</td><td>10⁻⁴/yr — In Group, not on site</td></tr>
+          <tr><td><b>D</b></td><td>Likely</td><td>10⁻³/yr — Occurred in Group Co.</td></tr>
+          <tr><td><b>E</b></td><td>Very Likely</td><td>10⁻²/yr — Multiple times in Group</td></tr>
+          <tr><td><b>F</b></td><td>Almost Certain</td><td>≥ 10⁻¹/yr — Once or more on site</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+    <div class="card"><div class="ct" style="margin-bottom:10px">⚡ Risk Acceptability & Required Actions</div>
+      <table class="dt"><thead><tr><th>Category</th><th>Level</th><th>Required Action</th><th>Signoff</th></tr></thead><tbody>
+        <tr><td><span class="rb c1">Cat 1</span></td><td>Intolerable</td><td>Report immediately. Must be reduced to ALARP. Quantify impact, MFL and RCE.</td><td>Director / CEO</td></tr>
+        <tr><td><span class="rb c2">Cat 2</span></td><td>High</td><td>Reduce ASAP to ALARP. Include in Risk Register. Quantify MFL and RCE.</td><td>Unit Manager / SVP</td></tr>
+        <tr><td><span class="rb c3">Cat 3</span></td><td>Medium</td><td>Medium priority. Monitor controls effectiveness. Include in Risk Register.</td><td>Dept. Manager / VP</td></tr>
+        <tr><td><span class="rb c4">Cat 4</span></td><td>Low</td><td>Low priority. Monitor and maintain current controls effectiveness.</td><td>Line Manager</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SUMMARY ══ -->
+<div class="tab-panel" id="tab-summary">
+  <div class="ph"><h2>Summary & Action Register</h2><p>Risk distribution, outstanding actions and AI-assisted study analysis.</p></div>
+  <div class="pb" id="summaryPanel"></div>
+</div>
+
+<!-- ══ RESOURCES ══ -->
+<div class="tab-panel" id="tab-resources">
+  <div class="ph"><h2>📹 HAZID Video Resource Library</h2><p>25-part video series on Hazard Identification Workshop methodology. Click to watch on YouTube.</p></div>
+  <div class="pb"><div class="vid-grid" id="vidGrid"></div></div>
+</div>
+
+<!-- ══ EXPORT ══ -->
+<div class="tab-panel" id="tab-export">
+  <div class="ph"><h2>Export & Save</h2><p>Export your study or save/load sessions. Ctrl+S for quick JSON save.</p></div>
+  <div class="pb">
+    <div class="exp-grid">
+      <div class="exp-card"><div class="exp-icon">📊</div><div class="exp-title">CSV Worksheet</div><div class="exp-desc">All scenarios with risk cells, categories, controls and actions — opens in Excel.</div><button class="btn btn-p" onclick="exportCSV()">Download CSV</button></div>
+      <div class="exp-card"><div class="exp-icon">📄</div><div class="exp-title">Markdown Report</div><div class="exp-desc">Full HAZID study report in Markdown for HSE management documentation.</div><button class="btn btn-s" onclick="exportMarkdown()">Download Report</button></div>
+      <div class="exp-card"><div class="exp-icon">💾</div><div class="exp-title">Save Session (JSON)</div><div class="exp-desc">Save all data to JSON. Share with team or reload to continue. Shortcut: Ctrl+S.</div><button class="btn btn-g" onclick="exportJSON()">Save JSON</button></div>
+      <div class="exp-card"><div class="exp-icon">📂</div><div class="exp-title">Load Session</div><div class="exp-desc">Load a previously saved JSON session to continue an existing study.</div><input type="file" id="loadInput" accept=".json" onchange="loadJSON(event)" style="display:none"><button class="btn btn-g" onclick="document.getElementById('loadInput').click()">Load JSON File</button></div>
+      <div class="exp-card"><div class="exp-icon">🖨️</div><div class="exp-title">Print / PDF</div><div class="exp-desc">Browser print — "Save as PDF" to generate a complete study PDF.</div><button class="btn btn-g" onclick="window.print()">Print / Save PDF</button></div>
+      <div class="exp-card" style="border:2px dashed var(--cat1)"><div class="exp-icon">🗑️</div><div class="exp-title">Clear All Data</div><div class="exp-desc">Reset the entire study. Permanently deletes all scenarios and setup data.</div><button class="btn btn-d" onclick="clearAll()">Clear All Data</button></div>
+    </div>
+  </div>
+</div>
+</main>
+
+<!-- AI PANEL -->
+<div class="ai-overlay" id="aiOverlay" onclick="toggleAIPanel()"></div>
+<div class="ai-panel" id="aiPanel">
+  <div class="aip-header">
+    <div>
+      <div class="aip-title">✦ AI HAZID Facilitator</div>
+      <div class="aip-sub">Expert guidance for your HAZID study</div>
+    </div>
+    <button class="aip-close" onclick="toggleAIPanel()">✕</button>
+  </div>
+  <div class="aip-msgs" id="aiMsgs">
+    <div class="chat-msg ai">👋 Hello! I'm your AI HAZID facilitator — a senior HSE professional with deep expertise in process safety, HAZID/HAZOP methodology, risk assessment and emergency response.<br><br>Ask me anything: hazard identification, risk ratings, control measures, ALARP justification, or use the quick chips below to get started.</div>
+  </div>
+  <div class="aip-chips">
+    <div class="chip" onclick="sendChip('What is HAZID methodology and how does it differ from HAZOP?')">What is HAZID?</div>
+    <div class="chip" onclick="sendChip('Explain ALARP and how to demonstrate it for a process safety hazard.')">ALARP explained</div>
+    <div class="chip" onclick="sendChip('What are the most common causes of hydrocarbon releases in oil & gas facilities?')">HC release causes</div>
+    <div class="chip" onclick="sendChip('What layers of protection should I consider for a fire and explosion hazard?')">Fire & explosion controls</div>
+  </div>
+  <div class="aip-input">
+    <textarea id="aiChatInput" placeholder="Ask about HAZID methodology, hazard categories, risk assessment..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIChat()}"></textarea>
+    <button class="aip-send" id="aiSendBtn" onclick="sendAIChat()">➤</button>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══════════════ DATA ═══════════════
+
+const SEVERITY=[
+  {id:6,lbl:'Disastrous',hs:'Multiple fatalities (>10)',env:'Disastrous, permanent massive impacts',rep:'Prolonged international impact, years'},
+  {id:5,lbl:'Catastrophic',hs:'Multiple fatalities (≤10) / PTD',env:'Catastrophic effect on large area',rep:'Serious international impact'},
+  {id:4,lbl:'Major',hs:'Single worker fatality / PTD / serious injury',env:'Major effect on surrounding environment',rep:'Significant national impact, months'},
+  {id:3,lbl:'Serious',hs:'Serious injuries (reversible, non-disability)',env:'Local effect, reversible',rep:'Considerable local impact'},
+  {id:2,lbl:'Minor',hs:'Minor injuries (weeks–months, reversible)',env:'Minor effect, organizational surroundings',rep:'Limited local media attention'},
+  {id:1,lbl:'Notable',hs:'Slight injuries / health effects (short-term)',env:'Slight effect (within fence area)',rep:'Slight impact – no public concern'},
+];
+const LIKELIHOOD=[
+  {id:'A',lbl:'Rare',freq:'< 10⁻⁶/yr',desc:'Not happened in industry last 50 years'},
+  {id:'B',lbl:'Unlikely',freq:'10⁻⁵ to < 10⁻⁴/yr',desc:'Could happen in world-wide industry, not Group'},
+  {id:'C',lbl:'Possible',freq:'10⁻⁴ to < 10⁻³/yr',desc:'Occurred in Group Company, not on this site'},
+  {id:'D',lbl:'Likely',freq:'10⁻³ to < 10⁻²/yr',desc:'Occurred in Group Company (within 5-yr planning)'},
+  {id:'E',lbl:'Very Likely',freq:'10⁻² to < 10⁻¹/yr',desc:'Occurred more than once in Group or once on site'},
+  {id:'F',lbl:'Almost Certain',freq:'≥ 10⁻¹/yr',desc:'Occurs once or more per year on this site'},
+];
+const RM={
+  '6A':1,'6B':1,'6C':1,'6D':1,'6E':1,'6F':1,
+  '5A':2,'5B':2,'5C':1,'5D':1,'5E':1,'5F':1,
+  '4A':3,'4B':3,'4C':2,'4D':2,'4E':1,'4F':1,
+  '3A':4,'3B':3,'3C':3,'3D':2,'3E':2,'3F':1,
+  '2A':4,'2B':4,'2C':3,'2D':3,'2E':2,'2F':2,
+  '1A':4,'1B':4,'1C':4,'1D':3,'1E':3,'1F':2,
+};
+const CAT_LBL={1:'Intolerable',2:'High',3:'Medium',4:'Low'};
+const CAT_CLS={1:'c1',2:'c2',3:'c3',4:'c4'};
+
+const GROUPS=[
+  {g:'🚗 Transport & Logistics',cats:[{id:'TL01',lbl:'Road Transport / Vehicle Collision',icon:'🚛'},{id:'TL02',lbl:'Marine / Vessel Operations',icon:'⛵'},{id:'TL03',lbl:'Crane & Lifting Operations',icon:'🏗️'},{id:'TL04',lbl:'Material / Manual Handling',icon:'📦'}]},
+  {g:'⚙️ Mechanical & Equipment',cats:[{id:'ME01',lbl:'Rotating Equipment Failure',icon:'⚙️'},{id:'ME02',lbl:'Pressure System Failure / Overpressure',icon:'🔧'},{id:'ME03',lbl:'Structural Failure / Collapse',icon:'🏚️'},{id:'ME04',lbl:'Tool & Equipment Misuse / Failure',icon:'🔨'}]},
+  {g:'🔥 Process & Fire Hazards',cats:[{id:'PF01',lbl:'Hydrocarbon Release / Loss of Containment',icon:'💧'},{id:'PF02',lbl:'Fire & Explosion',icon:'🔥'},{id:'PF03',lbl:'Toxic Gas Release (H₂S, SO₂, CO)',icon:'☣️'},{id:'PF04',lbl:'Chemical Spill / Uncontrolled Release',icon:'🧪'},{id:'PF05',lbl:'BLEVE / Boilover',icon:'💥'}]},
+  {g:'⚡ Electrical',cats:[{id:'EL01',lbl:'Electrical Shock / Electrocution',icon:'⚡'},{id:'EL02',lbl:'Arc Flash / Arc Blast',icon:'🌩️'},{id:'EL03',lbl:'Static Electricity / Lightning Strike',icon:'⛈️'}]},
+  {g:'👷 Work Activities',cats:[{id:'WA01',lbl:'Working at Height / Fall from Height',icon:'📏'},{id:'WA02',lbl:'Confined Space Entry',icon:'🕳️'},{id:'WA03',lbl:'Hot Work (Welding, Cutting, Grinding)',icon:'🔆'},{id:'WA04',lbl:'Excavation & Ground Disturbance',icon:'⛏️'},{id:'WA05',lbl:'Dropped Objects',icon:'⬇️'}]},
+  {g:'🌿 Natural & Environmental',cats:[{id:'NE01',lbl:'Extreme Weather / Natural Disaster',icon:'🌪️'},{id:'NE02',lbl:'Seismic Activity / Ground Movement',icon:'🌍'},{id:'NE03',lbl:'Environmental Spill / Pollution',icon:'🌊'}]},
+  {g:'🩺 Occupational Health',cats:[{id:'OH01',lbl:'Heat Stress / Thermal Stress',icon:'🌡️'},{id:'OH02',lbl:'Noise & Vibration Exposure',icon:'🔊'},{id:'OH03',lbl:'Hazardous Substance / Chemical Exposure',icon:'💊'},{id:'OH04',lbl:'Ergonomic Hazards / Musculoskeletal',icon:'🧘'}]},
+  {g:'🔒 Security',cats:[{id:'SE01',lbl:'Unauthorized Access / Sabotage',icon:'🚧'},{id:'SE02',lbl:'Cyber / IT Security Breach',icon:'💻'}]},
+  {g:'🚨 Emergency Response',cats:[{id:'ER01',lbl:'Inadequate Emergency Response / Evacuation',icon:'🚑'},{id:'ER02',lbl:'Communication Failure in Emergency',icon:'📡'}]},
+];
+const ALL_CATS=GROUPS.flatMap(g=>g.cats);
+
+const VIDEOS=[
+  {n:1,url:'https://youtu.be/6Mnei8YYhoI?si=R1kqb1mCT6gJ5NSm',topic:'Introduction & Overview'},
+  {n:2,url:'https://youtu.be/WgPNoE3fDtc?si=TibJiu82Atl4lzTI',topic:'HAZID Scope & Objectives'},
+  {n:3,url:'https://youtu.be/P9uCewPacyw?si=sifXNyWf8xAALFpL',topic:'Team Composition & Roles'},
+  {n:4,url:'https://youtu.be/vyNH8za7yDw?si=hF2sm7Xn4RXGtFfF',topic:'Hazard Categories (Part A)'},
+  {n:5,url:'https://youtu.be/G-mgzpeIb3U?si=FnEtu2F79B2GflC9',topic:'Hazard Categories (Part B)'},
+  {n:6,url:'https://youtu.be/4ehbNnK229s?si=0Ke-076DQyG3h8BK',topic:'Risk Assessment Methodology'},
+  {n:7,url:'https://youtu.be/HTiEuhyZRXQ?si=erLAs6xrnDnf0yt7',topic:'Consequence & Severity Assessment'},
+  {n:8,url:'https://youtu.be/6Zom3l_xMMk?si=2f28b_MczBF4oD_h',topic:'Likelihood Assessment'},
+  {n:9,url:'https://youtu.be/T44nyMZWwx4?si=H0ZEy3p4KqfKTySZ',topic:'Preventative Controls'},
+  {n:10,url:'https://youtu.be/jyMshIcKcsU?si=ovz1OC8wsda-m6r3',topic:'Mitigative Controls'},
+  {n:11,url:'https://youtu.be/PFhO_gl9MzA?si=ZTQuwUuWo97qh5P-',topic:'Administrative Controls'},
+  {n:12,url:'https://youtu.be/-YYFcuf-NnI?si=6EJ1Of-qDz-EoRXx',topic:'Residual Risk Evaluation'},
+  {n:13,url:'https://youtu.be/OWjH_eS1y6w?si=r9qQuhBhEXLEH33d',topic:'ALARP Demonstration'},
+  {n:14,url:'https://youtu.be/Uy2204h1V-A?si=F30tyV6pDOPhM6CQ',topic:'Risk Acceptability Criteria'},
+  {n:15,url:'https://youtu.be/HZ9wPWwj8uc?si=miFqaLT369Q26ALu',topic:'Documentation Standards'},
+  {n:16,url:'https://youtu.be/Mf_kzV5cFJA?si=NUk7lB0vSwTcDb6Q',topic:'PHA Pro Worksheet – Part 1'},
+  {n:17,url:'https://youtu.be/wS-1Qg4rTLY?si=oBcRj18xEHhuZ7Z3',topic:'PHA Pro Worksheet – Part 2'},
+  {n:18,url:'https://youtu.be/IQyIBauGZoo?si=x_l28sn2Xua-8yFh',topic:'Action Register & Tracking'},
+  {n:19,url:'https://youtu.be/h8w3dTGXPE8?si=pS15oqO_W78BJ_Bk',topic:'Workshop Facilitation Tips'},
+  {n:20,url:'https://youtu.be/s9euC7gFeZw?si=hrHfuQpNBEKqDSyV',topic:'Worked Example – Part 1'},
+  {n:21,url:'https://youtu.be/T11Ynwv62Kg?si=kimlfoU99-hxK8xs',topic:'Worked Example – Part 2'},
+  {n:22,url:'https://youtu.be/98wzeWHltXk?si=yNfaNKXBk8RmbQx4',topic:'Worked Example – Part 3'},
+  {n:23,url:'https://youtu.be/1vUPrJG3DyM?si=E03-ycMNog4d5n_w',topic:'Worked Example – Part 4'},
+  {n:24,url:'https://youtu.be/ccIzl05lrNI?si=AoyGGJ2gjsBwGVEh',topic:'Review & Quality Check'},
+  {n:25,url:'https://youtu.be/d5pLdSgK2YU?si=1SCEFJSqhfZTEvvp',topic:'Closing & Best Practices'},
+];
+
+// ═══════════════ STATE ═══════════════
+let ST={setup:{},cats:{},scenarios:[]};
+let nextId=1;
+
+// ═══════════════ INIT ═══════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  loadStorage();
+  renderCats();renderWS();renderMatrix();renderSummary();renderVideos();
+  updateBadges();updateProjBadge();
+  document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();exportJSON();}});
+  setInterval(saveData,30000);
+});
+
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===`tab-${t}`));
+  if(t==='matrix')renderMatrix();
+  if(t==='summary')renderSummary();
+}
+
+// ═══════════════ RISK HELPERS ═══════════════
+function cell(s,l){return s&&l?`${s}${l}`:null}
+function cat(s,l){const c=cell(s,l);return c?RM[c]||null:null}
+function rbHTML(s,l){
+  const c=cell(s,l);if(!c)return '<span class="rb cn">—</span>';
+  const k=RM[c];return `<span class="rb ${CAT_CLS[k]}">${c} — Cat ${k} ${CAT_LBL[k]}</span>`;
+}
+
+// ═══════════════ CATEGORIES ═══════════════
+function renderCats(){
+  let h='';
+  GROUPS.forEach(gr=>{
+    h+=`<div><div class="cg-title">${gr.g}</div><div class="cg-grid">`;
+    gr.cats.forEach(c=>{
+      const st=ST.cats[c.id]||'none';
+      h+=`<div class="ci${st==='applicable'?' app':st==='na'?' na':''}" id="ci_${c.id}">
+        <span class="ci-icon">${c.icon}</span><span class="ci-lbl">${c.lbl}</span>
+        <div class="ci-btns">
+          <button class="ct-btn yes-btn" onclick="setCS('${c.id}','applicable',event)">✓</button>
+          <button class="ct-btn na-btn" onclick="setCS('${c.id}','na',event)">N/A</button>
+        </div></div>`;
+    });
+    h+='</div></div>';
+  });
+  document.getElementById('catPanel').innerHTML=h;
+  updCatSum();
+}
+function setCS(id,st,e){e.stopPropagation();ST.cats[id]=(ST.cats[id]===st)?'none':st;renderCats();updateBadges();saveData();}
+function markAll(a){
+  ALL_CATS.forEach(c=>{if(a==='reset')delete ST.cats[c.id];else ST.cats[c.id]=a==='applicable'?'applicable':'na';});
+  renderCats();updateBadges();saveData();
+}
+function updCatSum(){
+  const app=Object.values(ST.cats).filter(v=>v==='applicable').length;
+  const na=Object.values(ST.cats).filter(v=>v==='na').length;
+  const el=document.getElementById('catSumText');
+  if(el)el.textContent=`${app} applicable · ${na} N/A · ${ALL_CATS.length-app-na} pending`;
+}
+
+// ═══════════════ WORKSHEET ═══════════════
+function addScenario(data={}){
+  const id=`S${String(nextId++).padStart(3,'0')}`;
+  ST.scenarios.push({id,category:'',description:'',causes:'',iSev:'',iLik:'',preventCtrl:'',mitigCtrl:'',adminCtrl:'',rSev:'',rLik:'',accept:'',reco:'',resp:'',due:'',created:new Date().toISOString(),...data});
+  renderWS();updateBadges();saveData();
+  setTimeout(()=>{const el=document.getElementById(`sc_${id}`);if(el){el.classList.add('exp');el.scrollIntoView({behavior:'smooth',block:'center'});}},60);
+}
+function delScenario(id){if(!confirm('Delete this scenario?'))return;ST.scenarios=ST.scenarios.filter(s=>s.id!==id);renderWS();updateBadges();saveData();}
+function toggleSC(id){document.getElementById(`sc_${id}`)?.classList.toggle('exp');}
+function updSC(id,f,v){const s=ST.scenarios.find(s=>s.id===id);if(s){s[f]=v;if(['iSev','iLik','rSev','rLik'].includes(f))updRiskDisplay(id);debSave();}}
+let dbTimer;function debSave(){clearTimeout(dbTimer);dbTimer=setTimeout(saveData,900);}
+
+function updRiskDisplay(id){
+  const s=ST.scenarios.find(s=>s.id===id);if(!s)return;
+  const iEl=document.getElementById(`ir_${id}`);const rEl=document.getElementById(`rr_${id}`);
+  if(iEl)iEl.innerHTML=rbHTML(s.iSev,s.iLik);if(rEl)rEl.innerHTML=rbHTML(s.rSev,s.rLik);
+  const mEl=document.getElementById(`sm_${id}`);
+  if(mEl){const ic=cat(s.iSev,s.iLik),rc=cat(s.rSev,s.rLik);let h='';
+    if(ic)h+=`<span class="rb ${CAT_CLS[ic]}" style="font-size:10px">${s.iSev}${s.iLik}</span>`;
+    if(rc)h+=` → <span class="rb ${CAT_CLS[rc]}" style="font-size:10px">${s.rSev}${s.rLik}</span>`;mEl.innerHTML=h;}
+}
+function sevOpts(sel){return SEVERITY.map(s=>`<option value="${s.id}"${sel==s.id?' selected':''}>${s.id} — ${s.lbl}</option>`).join('')}
+function likOpts(sel){return LIKELIHOOD.map(l=>`<option value="${l.id}"${sel===l.id?' selected':''}>${l.id} — ${l.lbl}</option>`).join('')}
+function catOpts(sel){let h='<option value="">— Select Category —</option>';GROUPS.forEach(g=>{h+=`<optgroup label="${g.g}">`;g.cats.forEach(c=>h+=`<option value="${c.id}"${sel===c.id?' selected':''}>${c.lbl}</option>`);h+='</optgroup>';});return h;}
+
+function scHTML(s,n){
+  const ic=cat(s.iSev,s.iLik),rc=cat(s.rSev,s.rLik);
+  let meta='';
+  if(ic)meta+=`<span class="rb ${CAT_CLS[ic]}" style="font-size:10px">${s.iSev}${s.iLik}</span>`;
+  if(rc)meta+=` → <span class="rb ${CAT_CLS[rc]}" style="font-size:10px">${s.rSev}${s.rLik}</span>`;
+  if(s.accept==='alarp')meta+=' <span class="tag alarp">ALARP</span>';
+  if(s.accept==='action')meta+=' <span class="tag action">Action Required</span>';
+  const title=(s.description||`Scenario ${n}`).substring(0,65);
+  return `<div class="sc-card" id="sc_${s.id}">
+  <div class="sc-head" onclick="toggleSC('${s.id}')">
+    <div class="sc-num">${n}</div>
+    <div class="sc-title">${title}</div>
+    <div class="sc-meta" id="sm_${s.id}">${meta}</div>
+    <div style="display:flex;gap:5px;align-items:center">
+      <button class="btn btn-d btn-sm" onclick="delScenario('${s.id}');event.stopPropagation()">🗑</button>
+      <div class="sc-chev">▼</div>
+    </div>
+  </div>
+  <div class="sc-body">
+    <div class="fg2" style="margin-top:12px">
+      <div class="fg"><label>Hazard Scenario Description</label>
+        <textarea placeholder="Describe the hazard scenario or initiating event..." rows="2"
+          onchange="updSC('${s.id}','description',this.value)">${s.description}</textarea></div>
+      <div class="fg"><label>Hazard Category</label>
+        <select onchange="updSC('${s.id}','category',this.value)">${catOpts(s.category)}</select></div>
+    </div>
+    <div class="fg">
+      <label>Causes / Guidewords</label>
+      <div class="field-row">
+        <textarea placeholder="Root causes, deviations or guidewords..." rows="2"
+          id="causes_${s.id}" onchange="updSC('${s.id}','causes',this.value)">${s.causes}</textarea>
+        <button class="ai-btn-inline" onclick="aiSuggestCauses('${s.id}',this)" title="AI suggests causes for this scenario">✦ Causes</button>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="ss-title"><span class="sp">Step 2</span> Initial Risk — Before Existing Controls</div>
+      <div class="rs-grid">
+        <div class="fg"><label>Severity</label>
+          <select onchange="updSC('${s.id}','iSev',this.value);updRiskDisplay('${s.id}')">
+            <option value="">— Select Severity (1–6) —</option>${sevOpts(s.iSev)}</select>
+          <div class="fhint">H&S, Environment, Reputation impact without controls</div></div>
+        <div class="fg"><label>Likelihood</label>
+          <select onchange="updSC('${s.id}','iLik',this.value);updRiskDisplay('${s.id}')">
+            <option value="">— Select Likelihood (A–F) —</option>${likOpts(s.iLik)}</select>
+          <div class="fhint">Probability of scenario occurring without controls</div></div>
+      </div>
+      <div class="risk-result">
+        <div id="ir_${s.id}">${rbHTML(s.iSev,s.iLik)}</div>
+        <div class="rr-info">${s.iSev&&s.iLik?`${SEVERITY.find(sv=>sv.id==s.iSev)?.lbl} × ${LIKELIHOOD.find(l=>l.id===s.iLik)?.lbl}`:'Select severity and likelihood to see risk cell'}</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-ai btn-sm" onclick="aiSuggestControls('${s.id}',this)" title="AI suggests controls for all 3 layers based on this scenario">✦ AI Suggest All Controls (Steps 3–5)</button>
+    </div>
+
+    <div class="ss">
+      <div class="ss-title"><span class="sp">Step 3</span> Preventative Controls (Pre-Incident)</div>
+      <div class="fg"><textarea placeholder="Engineering controls, barriers, interlocks, SIL-rated systems, process design features that PREVENT the hazard from occurring..." rows="3"
+        id="prev_${s.id}" onchange="updSC('${s.id}','preventCtrl',this.value)">${s.preventCtrl}</textarea>
+        <div class="fhint">Controls that reduce the LIKELIHOOD of the initiating event</div></div>
+    </div>
+
+    <div class="ss">
+      <div class="ss-title"><span class="sp">Step 4</span> Mitigative / Recovery Controls (Post-Incident)</div>
+      <div class="fg"><textarea placeholder="PSV/BDV, deluge systems, ESD/EDP, secondary containment, bunds, emergency response, firefighting that REDUCE consequences..." rows="3"
+        id="mitig_${s.id}" onchange="updSC('${s.id}','mitigCtrl',this.value)">${s.mitigCtrl}</textarea>
+        <div class="fhint">Controls that reduce the SEVERITY / consequences of the event</div></div>
+    </div>
+
+    <div class="ss">
+      <div class="ss-title"><span class="sp">Step 5</span> Administrative & Training Controls</div>
+      <div class="fg"><textarea placeholder="PTW system, SOPs, JSA, toolbox talks, competency assurance, inspection programs, PPE, emergency drills..." rows="3"
+        id="admin_${s.id}" onchange="updSC('${s.id}','adminCtrl',this.value)">${s.adminCtrl}</textarea>
+        <div class="fhint">Procedural, administrative and human factor controls</div></div>
+    </div>
+
+    <div class="ss res">
+      <div class="ss-title"><span class="sp">Step 6</span> Residual Risk — After All Existing Controls</div>
+      <div class="rs-grid">
+        <div class="fg"><label>Residual Severity</label>
+          <select onchange="updSC('${s.id}','rSev',this.value);updRiskDisplay('${s.id}')">
+            <option value="">— Select Residual Severity —</option>${sevOpts(s.rSev)}</select></div>
+        <div class="fg"><label>Residual Likelihood</label>
+          <select onchange="updSC('${s.id}','rLik',this.value);updRiskDisplay('${s.id}')">
+            <option value="">— Select Residual Likelihood —</option>${likOpts(s.rLik)}</select></div>
+      </div>
+      <div class="risk-result">
+        <div id="rr_${s.id}">${rbHTML(s.rSev,s.rLik)}</div>
+        <div class="rr-info">${s.rSev&&s.rLik?`${SEVERITY.find(sv=>sv.id==s.rSev)?.lbl} × ${LIKELIHOOD.find(l=>l.id===s.rLik)?.lbl}`:'Select residual ratings after applying controls'}</div>
+      </div>
+    </div>
+
+    <div class="ss">
+      <div class="ss-title"><span class="sp">Step 7</span> Risk Acceptability & Recommendations</div>
+      <div style="margin-bottom:10px"><label>Acceptability Decision</label>
+        <div class="alarp-grp">
+          <button class="alarp-b alarp ${s.accept==='alarp'?'on':''}"
+            onclick="updSC('${s.id}','accept','alarp');this.closest('.alarp-grp').querySelectorAll('.alarp-b').forEach(b=>b.classList.remove('on'));this.classList.add('on');saveData()">
+            ✓ ALARP — Tolerable</button>
+          <button class="alarp-b act ${s.accept==='action'?'on':''}"
+            onclick="updSC('${s.id}','accept','action');this.closest('.alarp-grp').querySelectorAll('.alarp-b').forEach(b=>b.classList.remove('on'));this.classList.add('on');saveData()">
+            ⚠ Action Required</button>
+        </div>
+      </div>
+      <div class="fg"><label>Recommendations / Actions</label>
+        <div class="field-row">
+          <textarea placeholder="Describe recommended actions, additional controls or further studies..." rows="2"
+            id="reco_${s.id}" onchange="updSC('${s.id}','reco',this.value)">${s.reco}</textarea>
+          <button class="ai-btn-inline" onclick="aiSuggestReco('${s.id}',this)" title="AI recommends actions based on residual risk and current controls">✦ Reco</button>
+        </div>
+      </div>
+      <div class="fg2">
+        <div class="fg"><label>Responsible Party</label>
+          <input type="text" placeholder="Name / Role / Department" value="${s.resp}" onchange="updSC('${s.id}','resp',this.value)"></div>
+        <div class="fg"><label>Target Completion Date</label>
+          <input type="date" value="${s.due}" onchange="updSC('${s.id}','due',this.value)"></div>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+function renderWS(){
+  const el=document.getElementById('wsContainer');
+  const fCat=document.getElementById('filterCat');
+  if(fCat){const cur=fCat.value;let h='<option value="">All Categories</option>';GROUPS.forEach(g=>{h+=`<optgroup label="${g.g}">`;g.cats.forEach(c=>h+=`<option value="${c.id}"${cur===c.id?' selected':''}>${c.lbl}</option>`);h+='</optgroup>';});fCat.innerHTML=h;}
+  if(!ST.scenarios.length){el.innerHTML=`<div class="es"><div class="es-icon">📝</div><div class="es-title">No scenarios yet</div><div class="es-desc">Click "Add Scenario" to start, or use "✦ AI Generate Scenarios" to auto-generate based on your project context.</div><button class="btn btn-p btn-lg" onclick="addScenario()">+ Add First Scenario</button></div>`;return;}
+  el.innerHTML=ST.scenarios.map((s,i)=>scHTML(s,i+1)).join('');
+}
+function filterScenarios(){
+  const q=(document.getElementById('scSearch')?.value||'').toLowerCase();
+  const fc=document.getElementById('filterCat')?.value||'';
+  const fr=document.getElementById('filterRisk')?.value||'';
+  document.querySelectorAll('.sc-card').forEach((card,i)=>{
+    const s=ST.scenarios[i];if(!s)return;
+    let show=true;
+    if(q&&!s.description.toLowerCase().includes(q)&&!s.causes.toLowerCase().includes(q))show=false;
+    if(fc&&s.category!==fc)show=false;
+    if(fr){const ic=cat(s.iSev,s.iLik),rc=cat(s.rSev,s.rLik);if(String(ic)!==fr&&String(rc)!==fr)show=false;}
+    card.style.display=show?'':'none';
+  });
+}
+
+// ═══════════════ RISK MATRIX ═══════════════
+function renderMatrix(){
+  const el=document.getElementById('matrixDisplay');if(!el)return;
+  const dots={};
+  ST.scenarios.forEach((s,i)=>{const n=i+1;
+    if(s.iSev&&s.iLik){const k=`${s.iSev}${s.iLik}`;if(!dots[k])dots[k]={ini:[],res:[]};dots[k].ini.push(n);}
+    if(s.rSev&&s.rLik){const k=`${s.rSev}${s.rLik}`;if(!dots[k])dots[k]={ini:[],res:[]};dots[k].res.push(n);}
+  });
+  let h='<table class="rm-table"><thead><tr class="rm-hrow"><th style="background:transparent"></th><th style="font-size:9px;line-height:1.3">← Severity<br>Likelihood →</th>';
+  LIKELIHOOD.forEach(l=>h+=`<th>${l.id}<br><span style="font-weight:400;font-size:9px">${l.lbl}</span></th>`);
+  h+='</tr></thead><tbody>';
+  [6,5,4,3,2,1].forEach(sv=>{
+    const sd=SEVERITY.find(s=>s.id===sv);
+    h+=`<tr><td class="rm-slab" style="text-align:center;font-family:var(--mono);font-size:13px;font-weight:700">${sv}</td>`;
+    h+=`<td class="rm-slab">${sv} — ${sd.lbl}<br><span style="font-size:9px;color:var(--g400)">${sd.hs}</span></td>`;
+    ['A','B','C','D','E','F'].forEach(lk=>{
+      const c=`${sv}${lk}`;const k=RM[c];const d=dots[c]||{ini:[],res:[]};
+      let dd='';d.ini.forEach(n=>dd+=`<div class="rdot ini" title="S${n} Initial"></div>`);d.res.forEach(n=>dd+=`<div class="rdot res" title="S${n} Residual"></div>`);
+      h+=`<td class="rm-cell c${k}" title="${c} — Cat ${k}: ${CAT_LBL[k]}"><span class="rm-lbl">${c}</span>${dd?`<div class="rm-dots">${dd}</div>`:''}</td>`;
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table>';el.innerHTML=h;
+}
+
+// ═══════════════ SUMMARY ═══════════════
+function renderSummary(){
+  const el=document.getElementById('summaryPanel');if(!el)return;
+  const total=ST.scenarios.length;const iCats={1:0,2:0,3:0,4:0};
+  let actions=0,alarp=0;
+  ST.scenarios.forEach(s=>{const ic=cat(s.iSev,s.iLik);if(ic)iCats[ic]++;if(s.accept==='action')actions++;if(s.accept==='alarp')alarp++;});
+  let h=`<div class="stat-grid">
+    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Total Scenarios</div></div>
+    <div class="stat-card" style="border-left:4px solid var(--cat1)"><div class="stat-val" style="color:var(--cat1)">${iCats[1]}</div><div class="stat-lbl">Cat 1 Intolerable</div></div>
+    <div class="stat-card" style="border-left:4px solid var(--cat2)"><div class="stat-val" style="color:var(--cat2)">${iCats[2]}</div><div class="stat-lbl">Cat 2 High</div></div>
+    <div class="stat-card" style="border-left:4px solid var(--cat3)"><div class="stat-val" style="color:var(--cat3)">${iCats[3]}</div><div class="stat-lbl">Cat 3 Medium</div></div>
+    <div class="stat-card" style="border-left:4px solid var(--cat4)"><div class="stat-val" style="color:var(--cat4)">${iCats[4]}</div><div class="stat-lbl">Cat 4 Low</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--cat1)">${actions}</div><div class="stat-lbl">Open Actions</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--cat4)">${alarp}</div><div class="stat-lbl">ALARP Tolerable</div></div>
+  </div>`;
+  const actionItems=ST.scenarios.filter(s=>s.reco||s.accept==='action');
+  if(actionItems.length){
+    h+=`<div class="card"><div class="ct" style="margin-bottom:10px">⚡ Action Register</div><div style="overflow-x:auto"><table class="dt">
+      <thead><tr><th>#</th><th>Scenario</th><th>Category</th><th>Initial</th><th>Residual</th><th>Status</th><th>Recommendation</th><th>Responsible</th><th>Due</th></tr></thead><tbody>`;
+    actionItems.forEach((s,i)=>{
+      const ic=cat(s.iSev,s.iLik),rc=cat(s.rSev,s.rLik);
+      const cLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||'—';
+      h+=`<tr><td style="font-family:var(--mono)">${i+1}</td><td style="max-width:160px;font-size:12px">${s.description||'—'}</td>
+        <td style="font-size:11px">${cLbl}</td>
+        <td>${ic?`<span class="rb ${CAT_CLS[ic]}" style="font-size:10px">${s.iSev}${s.iLik}</span>`:'—'}</td>
+        <td>${rc?`<span class="rb ${CAT_CLS[rc]}" style="font-size:10px">${s.rSev}${s.rLik}</span>`:'—'}</td>
+        <td>${s.accept==='action'?'<span class="tag action">Action Required</span>':s.accept==='alarp'?'<span class="tag alarp">ALARP</span>':'<span class="tag pend">Pending</span>'}</td>
+        <td style="max-width:180px;font-size:12px">${s.reco||'—'}</td>
+        <td style="font-size:12px">${s.resp||'—'}</td><td style="font-size:12px">${s.due||'—'}</td></tr>`;
+    });
+    h+='</tbody></table></div></div>';
+  }
+  el.innerHTML=h;
+}
+
+// ═══════════════ VIDEOS ═══════════════
+function renderVideos(){
+  document.getElementById('vidGrid').innerHTML=VIDEOS.map(v=>`
+    <div class="vid-card">
+      <div class="vid-thumb"><div class="vid-num">${String(v.n).padStart(2,'0')}</div>
+        <a href="${v.url}" target="_blank" rel="noopener" class="vid-play">▶</a></div>
+      <div class="vid-info"><div class="vid-part">Part ${v.n} of 25</div><div class="vid-topic">${v.topic}</div>
+        <a href="${v.url}" target="_blank" rel="noopener" class="vid-link">▶ Watch on YouTube →</a></div>
+    </div>`).join('');
+}
+
+// ═══════════════ BADGES & HEADER ═══════════════
+function updateBadges(){
+  const app=Object.values(ST.cats).filter(v=>v==='applicable').length;
+  document.getElementById('catBadge').textContent=app;
+  document.getElementById('wsBadge').textContent=ST.scenarios.length;
+}
+function updateProjBadge(){
+  const n=document.getElementById('projectName')?.value||ST.setup?.projectName||'';
+  const el=document.getElementById('projBadge');
+  if(el)el.innerHTML=n?`<span>${n}</span>`:'No project loaded — visit Setup tab';
+}
+
+// ═══════════════ PERSISTENCE ═══════════════
+const SF=['projectName','studyRef','location','studyDate','facilitator','scribe','scope','studyNode','team1','team2','team3','team4','team5','team6','teamExtra'];
+function saveData(){
+  SF.forEach(f=>{const e=document.getElementById(f);if(e)ST.setup[f]=e.value;});
+  try{
+    localStorage.setItem('hazid_v3',JSON.stringify(ST));
+    const d=document.getElementById('saveDot'),t=document.getElementById('saveText');
+    if(d){d.classList.add('ok');setTimeout(()=>d.classList.remove('ok'),2000);}
+    if(t)t.textContent='Saved '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    updateProjBadge();updCatSum();updateBadges();
+  }catch(e){console.warn('Save failed:',e);}
+}
+function loadStorage(){
+  try{const raw=localStorage.getItem('hazid_v3');
+    if(raw){const d=JSON.parse(raw);ST={...ST,...d};
+      if(ST.scenarios?.length){const mx=Math.max(...ST.scenarios.map(s=>parseInt(s.id.slice(1))||0));nextId=mx+1;}
+      setTimeout(()=>{SF.forEach(f=>{const e=document.getElementById(f);if(e&&ST.setup?.[f])e.value=ST.setup[f];});updateProjBadge();},80);
+    }
+  }catch(e){console.warn('Load failed:',e);}
+}
+
+// ═══════════════ AI PANEL ═══════════════
+let aiPanelOpen=false;
+let chatHistory=[];
+function toggleAIPanel(){
+  aiPanelOpen=!aiPanelOpen;
+  document.getElementById('aiPanel').classList.toggle('open',aiPanelOpen);
+  document.getElementById('aiOverlay').classList.toggle('open',aiPanelOpen);
+}
+
+const AI_SYSTEM=`You are an expert HAZID (Hazard Identification Study) facilitator with 30+ years of experience in oil & gas, petrochemical, LNG and industrial HSE. You have deep expertise in:
+- HAZID/HAZOP methodology per IEC 61882 and IEC 61511
+- Process safety management (OSHA PSM, API RP 750, API RP 14C)
+- Risk assessment — qualitative, semi-quantitative, and quantitative (QRA)
+- Bow-tie analysis, LOPA (Layer of Protection Analysis), FMEA
+- Emergency response planning, fire & explosion engineering
+- H2S and sour service hazards, hydrocarbon releases
+- Occupational health: noise, heat stress, chemical exposure, ergonomics
+- ISO 45001, ISO 14001, ISO 31000 risk management frameworks
+
+Your role: assist the HAZID team by identifying hazards, assessing risks, developing effective control measures, and facilitating ALARP demonstration. Be concise, practical, and specific. Use industry-standard terminology. When suggesting risk ratings, justify your reasoning.`;
+
+async function callAI(userMsg){
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:AI_SYSTEM,messages:[{role:'user',content:userMsg}]})
+  });
+  if(!resp.ok)throw new Error(`API ${resp.status}`);
+  const d=await resp.json();return d.content[0].text;
+}
+
+async function callAIWithHistory(userMsg){
+  chatHistory.push({role:'user',content:userMsg});
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:AI_SYSTEM,messages:chatHistory})
+  });
+  if(!resp.ok)throw new Error(`API ${resp.status}`);
+  const d=await resp.json();const reply=d.content[0].text;
+  chatHistory.push({role:'assistant',content:reply});return reply;
+}
+
+function projCtx(){
+  const s=ST.setup;
+  return `Project: "${s.projectName||'N/A'}" | Location: "${s.location||'N/A'}" | Node/System: "${s.studyNode||'N/A'}" | Scope: "${s.scope||'N/A'}"`;
+}
+
+async function sendAIChat(){
+  const inp=document.getElementById('aiChatInput');const btn=document.getElementById('aiSendBtn');
+  const msg=inp.value.trim();if(!msg)return;
+  inp.value='';addChatMsg(msg,'user');
+  const typing=addTyping();btn.disabled=true;
+  try{
+    const ctx=`Study context: ${projCtx()}\n\nUser question: ${msg}`;
+    const reply=await callAIWithHistory(ctx);
+    typing.remove();addChatMsg(reply,'ai');
+  }catch(e){typing.remove();addChatMsg('⚠ Connection error. Please try again.','ai');}
+  btn.disabled=false;inp.focus();
+}
+function sendChip(msg){document.getElementById('aiChatInput').value=msg;sendAIChat();}
+
+function addChatMsg(txt,role){
+  const el=document.getElementById('aiMsgs');
+  const d=document.createElement('div');d.className=`chat-msg ${role}`;
+  d.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\n/g,'<br>');
+  el.appendChild(d);el.scrollTop=el.scrollHeight;return d;
+}
+function addTyping(){
+  const el=document.getElementById('aiMsgs');
+  const d=document.createElement('div');d.className='chat-typing';
+  d.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  el.appendChild(d);el.scrollTop=el.scrollHeight;return d;
+}
+
+// ═══ AI SETUP ═══
+async function aiDraftScope(btn){
+  const name=document.getElementById('projectName').value;
+  const loc=document.getElementById('location').value;
+  const node=document.getElementById('studyNode').value;
+  if(!name){notify('⚠ Enter a project name first');return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> Drafting...';
+  try{
+    const txt=await callAI(`Write a concise HAZID study scope statement (3–4 sentences) for:\nProject: "${name}"\nLocation: "${loc||'not specified'}"\nSystem/Node: "${node||'not specified'}"\n\nInclude: purpose of study, key activities/systems in scope, study boundaries and exclusions. Use professional HSE language. No headings — plain paragraph only.`);
+    document.getElementById('scope').value=txt.trim();saveData();notify('✦ Scope drafted by AI');
+  }catch(e){notify('⚠ AI error: '+e.message);}
+  btn.disabled=false;btn.innerHTML='✦ AI Draft';
+}
+
+// ═══ AI CATEGORIES ═══
+async function aiRecommendCats(btn){
+  const ctx=projCtx();
+  if(!ST.setup.projectName){notify('⚠ Enter project details in Setup tab first');return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> Analysing...';
+  const catList=ALL_CATS.map(c=>`${c.id}: ${c.lbl}`).join('\n');
+  try{
+    const txt=await callAI(`Based on this project:\n${ctx}\n\nFrom the following hazard category IDs, identify which are APPLICABLE (select 8–14 most relevant). Consider the project type, location, activities and typical hazards.\n\nCategories:\n${catList}\n\nReturn ONLY a JSON array of applicable category IDs, e.g. ["TL01","PF01","PF02"]. No explanation, no markdown.`);
+    const clean=txt.replace(/```json|```/g,'').trim();
+    const ids=JSON.parse(clean);
+    if(!Array.isArray(ids))throw new Error('Not an array');
+    markAll('na');
+    ids.forEach(id=>{if(ALL_CATS.find(c=>c.id===id))ST.cats[id]='applicable';});
+    renderCats();updateBadges();saveData();
+    notify(`✦ AI recommended ${ids.length} applicable categories`);
+  }catch(e){notify('⚠ Could not parse AI response. Try again.');}
+  btn.disabled=false;btn.innerHTML='✦ AI Recommend Categories';
+}
+
+// ═══ AI GENERATE SCENARIOS ═══
+async function aiGenerateScenarios(btn){
+  if(!ST.setup.projectName){notify('⚠ Fill in project details in Setup tab first');return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> Generating...';
+  const applicable=ALL_CATS.filter(c=>ST.cats[c.id]==='applicable').map(c=>`${c.id}: ${c.lbl}`);
+  const catContext=applicable.length?`Applicable hazard categories:\n${applicable.join('\n')}`:`All available categories:\n${ALL_CATS.slice(0,15).map(c=>`${c.id}: ${c.lbl}`).join('\n')}`;
+  try{
+    const txt=await callAI(`You are facilitating a HAZID workshop for:\n${projCtx()}\n\n${catContext}\n\nGenerate 5 realistic, site-specific HAZID scenarios. Return ONLY a JSON array — no markdown, no explanation.\n\nEach item must have exactly these keys:\n{\n  "description": "specific scenario description (1 sentence)",\n  "category": "category ID from the list above",\n  "causes": "3-5 root causes separated by semicolons",\n  "iSev": <number 1-6>,\n  "iLik": "<letter A-F>"\n}\n\nBe specific to the project type and location. Vary severity and likelihood across scenarios.`);
+    const clean=txt.replace(/```json|```/g,'').trim();
+    const scenarios=JSON.parse(clean);
+    if(!Array.isArray(scenarios))throw new Error('Not an array');
+    scenarios.forEach(sc=>{
+      if(sc.description&&sc.iSev&&sc.iLik){
+        addScenario({description:sc.description,category:sc.category||'',causes:sc.causes||'',iSev:String(sc.iSev),iLik:sc.iLik});
+      }
+    });
+    notify(`✦ AI generated ${scenarios.length} scenarios`);
+  }catch(e){notify('⚠ Could not generate scenarios. Check project details and try again.');}
+  btn.disabled=false;btn.innerHTML='✦ AI Generate Scenarios';
+}
+
+// ═══ AI SUGGEST CAUSES ═══
+async function aiSuggestCauses(id,btn){
+  const s=ST.scenarios.find(s=>s.id===id);if(!s)return;
+  if(!s.description&&!s.category){notify('⚠ Enter a scenario description or category first');return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span>';
+  const catLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||s.category||'general hazard';
+  try{
+    const txt=await callAI(`${projCtx()}\n\nHAZID Scenario: "${s.description||'not specified'}"\nHazard Category: ${catLbl}\n\nList 5–7 specific, realistic root causes or initiating guidewords for this scenario in the context of this facility/project. Separate with semicolons. Be concise and industry-specific. Return ONLY the causes — no intro, no numbering, no explanation.`);
+    const el=document.getElementById(`causes_${id}`);
+    if(el){el.value=txt.trim();updSC(id,'causes',txt.trim());}
+    notify('✦ Causes suggested by AI');
+  }catch(e){notify('⚠ AI error: '+e.message);}
+  btn.disabled=false;btn.innerHTML='✦ Causes';
+}
+
+// ═══ AI SUGGEST CONTROLS ═══
+async function aiSuggestControls(id,btn){
+  const s=ST.scenarios.find(s=>s.id===id);if(!s)return;
+  if(!s.description&&!s.category){notify('⚠ Enter a scenario description or category first');return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> Generating controls...';
+  const catLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||s.category||'general hazard';
+  const sevLbl=SEVERITY.find(sv=>sv.id==s.iSev)?.lbl||'';const likLbl=LIKELIHOOD.find(l=>l.id===s.iLik)?.lbl||'';
+  try{
+    const txt=await callAI(`${projCtx()}\n\nHAZID Scenario: "${s.description||'not specified'}"\nCategory: ${catLbl}\nInitial Risk: Severity ${s.iSev||'?'} (${sevLbl}) × Likelihood ${s.iLik||'?'} (${likLbl})\nCauses: ${s.causes||'not specified'}\n\nSuggest realistic, specific controls for this scenario. Return ONLY a JSON object — no markdown, no explanation:\n{\n  "preventCtrl": "3-4 specific preventative controls (engineering barriers, interlocks, design features) — semicolons between items",\n  "mitigCtrl": "3-4 specific mitigative/recovery controls (emergency systems, secondary containment) — semicolons between items",\n  "adminCtrl": "2-3 administrative controls (procedures, permits, training, inspections) — semicolons between items"\n}`);
+    const clean=txt.replace(/```json|```/g,'').trim();
+    const ctrl=JSON.parse(clean);
+    if(ctrl.preventCtrl){const e=document.getElementById(`prev_${id}`);if(e){e.value=ctrl.preventCtrl;updSC(id,'preventCtrl',ctrl.preventCtrl);}}
+    if(ctrl.mitigCtrl){const e=document.getElementById(`mitig_${id}`);if(e){e.value=ctrl.mitigCtrl;updSC(id,'mitigCtrl',ctrl.mitigCtrl);}}
+    if(ctrl.adminCtrl){const e=document.getElementById(`admin_${id}`);if(e){e.value=ctrl.adminCtrl;updSC(id,'adminCtrl',ctrl.adminCtrl);}}
+    notify('✦ Controls for Steps 3–5 suggested by AI');
+  }catch(e){notify('⚠ Could not generate controls. Try again.');}
+  btn.disabled=false;btn.innerHTML='✦ AI Suggest All Controls (Steps 3–5)';
+}
+
+// ═══ AI SUGGEST RECOMMENDATIONS ═══
+async function aiSuggestReco(id,btn){
+  const s=ST.scenarios.find(s=>s.id===id);if(!s)return;
+  btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span>';
+  const catLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||'general hazard';
+  const rCell=cell(s.rSev,s.rLik)||'not assessed';
+  const rCat=cat(s.rSev,s.rLik);
+  const rCatLbl=rCat?`Cat ${rCat} — ${CAT_LBL[rCat]}`:'not assessed';
+  try{
+    const txt=await callAI(`${projCtx()}\n\nHAZID Scenario: "${s.description||'not specified'}"\nCategory: ${catLbl}\nResidual Risk: ${rCell} (${rCatLbl})\nExisting Preventative Controls: ${s.preventCtrl||'none listed'}\nExisting Mitigative Controls: ${s.mitigCtrl||'none listed'}\nAdministrative Controls: ${s.adminCtrl||'none listed'}\n\nBased on the residual risk level, suggest 2–3 specific, actionable recommendations to further reduce risk or verify ALARP. Be practical and facility-specific. Return plain text only — no headings, no bullet points, just the recommendations as a paragraph or 2–3 sentences.`);
+    const el=document.getElementById(`reco_${id}`);
+    if(el){el.value=txt.trim();updSC(id,'reco',txt.trim());}
+    notify('✦ Recommendations suggested by AI');
+  }catch(e){notify('⚠ AI error: '+e.message);}
+  btn.disabled=false;btn.innerHTML='✦ Reco';
+}
+
+// ═══════════════ EXPORT ═══════════════
+function exportCSV(){
+  const hdr=['#','ID','Category','Description','Causes','Init.Sev','Init.Lik','Init.Cell','Init.Cat','Prev.Controls','Mitig.Controls','Admin.Controls','Res.Sev','Res.Lik','Res.Cell','Res.Cat','Acceptability','Recommendations','Responsible','Due Date'];
+  const rows=ST.scenarios.map((s,i)=>{
+    const ic=cell(s.iSev,s.iLik)||'',rc=cell(s.rSev,s.rLik)||'';
+    const ik=RM[ic]||'',rk=RM[rc]||'';
+    const cLbl=ALL_CATS.find(c=>c.id===s.category)?.lbl||'';
+    return[i+1,s.id,cLbl,s.description,s.causes,s.iSev,s.iLik,ic,ik?`Cat ${ik} ${CAT_LBL[ik]}`:'',s.preventCtrl,s.mitigCtrl,s.adminCtrl,s.rSev,s.rLik,rc,rk?`Cat ${rk} ${CAT_LBL[rk]}`:'',s.accept,s.reco,s.resp,s.due].map(v=>`"${String(v||'').replace(/"/g,'""')}"`);
+  });
+  const csv=[hdr.map(h=>`"${h}"`).join(','),...rows.map(r=>r.join(','))].join('\n');
+  dl(csv,`HAZID_${ST.setup.projectName||'Study'}_${ts()}.csv`,'text/csv');notify('✓ CSV exported');
+}
+function exportMarkdown(){
+  const su=ST.setup;
+  let md=`# HAZID Study Report\n\n**Project:** ${su.projectName||'N/A'}  \n**Reference:** ${su.studyRef||'N/A'}  \n**Location:** ${su.location||'N/A'}  \n**Date:** ${su.studyDate||'N/A'}  \n**Facilitator:** ${su.facilitator||'N/A'}  \n**Generated:** ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}\n\n## Scope\n${su.scope||'N/A'}\n\n## Risk Matrix\n6×6 Semi-quantitative Risk Matrix (Severity 1–6 × Likelihood A–F, 4 Categories)\n\n## Worksheet\n\n`;
+  ST.scenarios.forEach((s,i)=>{
+    const ic=cell(s.iSev,s.iLik)||'—',rc=cell(s.rSev,s.rLik)||'—';
+    const ik=RM[ic]?`Cat ${RM[ic]} — ${CAT_LBL[RM[ic]]}`:'—';const rk=RM[rc]?`Cat ${RM[rc]} — ${CAT_LBL[RM[rc]]}`:'—';
+    md+=`### Scenario ${i+1} — ${s.description||'Unnamed'}\n\n`;
+    md+=`| Field | Detail |\n|---|---|\n`;
+    md+=`| Category | ${ALL_CATS.find(c=>c.id===s.category)?.lbl||'—'} |\n| Causes | ${s.causes||'—'} |\n`;
+    md+=`| Initial Risk | **${ic}** (${ik}) |\n| Preventative Controls | ${s.preventCtrl||'—'} |\n| Mitigative Controls | ${s.mitigCtrl||'—'} |\n| Admin Controls | ${s.adminCtrl||'—'} |\n`;
+    md+=`| Residual Risk | **${rc}** (${rk}) |\n| Acceptability | ${s.accept==='alarp'?'ALARP':s.accept==='action'?'Action Required':'Pending'} |\n`;
+    md+=`| Recommendations | ${s.reco||'—'} |\n| Responsible | ${s.resp||'—'} |\n| Due | ${s.due||'—'} |\n\n---\n\n`;
+  });
+  dl(md,`HAZID_${su.projectName||'Study'}_Report_${ts()}.md`,'text/markdown');notify('✓ Report exported');
+}
+function exportJSON(){saveData();dl(JSON.stringify(ST,null,2),`HAZID_${ST.setup.projectName||'Study'}_${ts()}.json`,'application/json');notify('✓ Session saved');}
+function loadJSON(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{ST=JSON.parse(ev.target.result);
+      if(ST.scenarios?.length){const mx=Math.max(...ST.scenarios.map(s=>parseInt(s.id.slice(1))||0));nextId=mx+1;}
+      SF.forEach(f=>{const el=document.getElementById(f);if(el&&ST.setup?.[f])el.value=ST.setup[f];});
+      renderCats();renderWS();renderMatrix();renderSummary();updateBadges();updateProjBadge();
+      notify('✓ Session loaded');
+    }catch(err){alert('Error: '+err.message);}
+  };r.readAsText(f);e.target.value='';
+}
+function clearAll(){
+  if(!confirm('⚠️ Delete ALL study data permanently?'))return;
+  if(!confirm('Confirm: clear all data?'))return;
+  localStorage.removeItem('hazid_v3');ST={setup:{},cats:{},scenarios:[]};nextId=1;
+  document.querySelectorAll('input,textarea,select').forEach(el=>{if(el.id!=='loadInput')el.value='';});
+  renderCats();renderWS();renderMatrix();renderSummary();updateBadges();updateProjBadge();notify('✓ All data cleared');
+}
+function dl(content,filename,mime){
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([content],{type:mime})),download:filename});
+  a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function ts(){return new Date().toISOString().slice(0,10);}
+
+let nTimer;
+function notify(msg){const el=document.getElementById('notif');el.textContent=msg;el.classList.add('show');clearTimeout(nTimer);nTimer=setTimeout(()=>el.classList.remove('show'),3500);}
+</script>
+</body>
+</html>
