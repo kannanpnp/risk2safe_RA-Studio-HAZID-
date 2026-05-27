@@ -291,10 +291,7 @@ textarea{resize:vertical;min-height:72px}
         <div class="fg"><label>Scribe / Recorder</label><input id="scribe" placeholder="Name of scribe" oninput="saveData()"></div>
         <div class="fg full" style="grid-column:1/-1">
           <label>Scope & Objectives</label>
-          <div class="field-row">
-            <textarea id="scope" placeholder="Describe the scope, objectives and study boundaries..." rows="3" oninput="saveData()"></textarea>
-            <button class="ai-btn-inline" onclick="aiDraftScope(this)" title="AI will draft scope based on project name, location and node">✦ AI Draft</button>
-          </div>
+          <textarea id="scope" placeholder="Describe the scope, objectives and study boundaries..." rows="3" oninput="saveData()"></textarea>
         </div>
         <div class="fg full" style="grid-column:1/-1">
           <label>Study Node / System Description</label>
@@ -1005,17 +1002,19 @@ async function aiRecommendCats(btn){
   const ctx=projCtx();
   if(!ST.setup.projectName){notify('⚠ Enter project details in Setup tab first');return;}
   btn.disabled=true;btn.innerHTML='<span class="spin">⟳</span> Analysing...';
-  const catList=ALL_CATS.map(c=>`${c.id}: ${c.lbl}`).join('\n');
+  const catList=ALL_CATS.map(c=>`${c.id}`).join(',');
   try{
-    const txt=await callAI(`Based on this project:\n${ctx}\n\nFrom the following hazard category IDs, identify which are APPLICABLE (select 8–14 most relevant). Consider the project type, location, activities and typical hazards.\n\nCategories:\n${catList}\n\nReturn ONLY a JSON array of applicable category IDs, e.g. ["TL01","PF01","PF02"]. No explanation, no markdown.`);
-    const clean=txt.replace(/```json|```/g,'').trim();
-    const ids=JSON.parse(clean);
-    if(!Array.isArray(ids))throw new Error('Not an array');
+    const txt=await callAI(`You are a HAZID facilitator. Based on this project:\n${ctx}\n\nSelect 8 to 14 applicable hazard category IDs from this list:\n${catList}\n\nRespond with ONLY a JSON array of strings. Example: ["TL01","PF01","PF02"]\nNo explanation. No markdown. No code fences. Only the JSON array.`);
+    // Robust extraction — find first [ ... ] block
+    const match=txt.match(/\[[\s\S]*?\]/);
+    if(!match)throw new Error('No array found in response');
+    const ids=JSON.parse(match[0]);
+    if(!Array.isArray(ids)||ids.length===0)throw new Error('Empty array');
     markAll('na');
     ids.forEach(id=>{if(ALL_CATS.find(c=>c.id===id))ST.cats[id]='applicable';});
     renderCats();updateBadges();saveData();
-    notify(`✦ AI recommended ${ids.length} applicable categories`);
-  }catch(e){notify('⚠ Could not parse AI response. Try again.');}
+    notify(`✦ AI recommended ${ids.filter(id=>ALL_CATS.find(c=>c.id===id)).length} applicable categories`);
+  }catch(e){notify('⚠ '+e.message+'. Try again.');}
   btn.disabled=false;btn.innerHTML='✦ AI Recommend Categories';
 }
 
