@@ -239,6 +239,18 @@ textarea{resize:vertical;min-height:72px}
 .ai-sug-label{font-size:10.5px;font-weight:800;color:var(--ai);text-transform:uppercase;letter-spacing:.4px}
 .ai-sug-apply{padding:3px 8px;background:var(--ai);color:white;border:none;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font)}
 
+/* ── SETTINGS MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--white);border-radius:var(--rl);padding:28px;width:460px;max-width:95vw;box-shadow:var(--shl);color:var(--g800)}
+.modal h3{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.modal p{font-size:13px;color:var(--g500);line-height:1.6;margin-bottom:16px}
+.api-status{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--r);font-size:12.5px;font-weight:600;margin-bottom:14px}
+.api-status.set{background:#dcfce7;color:#16a34a}.api-status.unset{background:#fee2e2;color:#dc2626}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.btn-cfg{display:flex;align-items:center;gap:5px;padding:5px 11px;background:var(--navy3);border:1px solid var(--navy4);border-radius:100px;color:var(--g300);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;transition:all .15s}
+.btn-cfg:hover{background:var(--navy4);color:var(--white)}
+
 /* ── NOTIFICATION ── */
 .notif{position:fixed;bottom:18px;right:18px;background:var(--navy);color:var(--white);padding:11px 15px;border-radius:var(--r);font-size:12.5px;box-shadow:var(--shl);z-index:999;display:none;align-items:center;gap:7px;border-left:3px solid var(--amber)}
 .notif.show{display:flex}
@@ -259,6 +271,7 @@ textarea{resize:vertical;min-height:72px}
   <div class="ai-header-badge">✦ AI Facilitated</div>
   <div class="proj-badge" id="projBadge">No project loaded — visit Setup tab</div>
   <div class="save-ind"><div class="save-dot" id="saveDot"></div><span id="saveText">Auto-save</span></div>
+  <button class="btn-cfg" onclick="openSettings()" id="apiKeyBtn">⚙ API Key</button>
   <button class="ai-fab" onclick="toggleAIPanel()">✦ AI Facilitator</button>
 </header>
 
@@ -450,6 +463,33 @@ textarea{resize:vertical;min-height:72px}
 </main>
 
 <!-- AI PANEL -->
+<!-- SETTINGS MODAL -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal">
+    <h3>⚙ Anthropic API Key</h3>
+    <p>Risk2Safe uses the Anthropic Claude API for all AI features. Your key is stored only in your browser's local storage — it is never sent anywhere except directly to Anthropic.</p>
+    <div class="api-status unset" id="apiStatusBadge">● No API key set — AI features disabled</div>
+    <div class="fg">
+      <label>API Key</label>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" autocomplete="off">
+      <div class="fhint">Get your key from <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--ai)">console.anthropic.com → API Keys</a></div>
+    </div>
+    <div class="fg" style="margin-top:4px">
+      <label>Model</label>
+      <select id="modelSelect">
+        <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (recommended — fast & capable)</option>
+        <option value="claude-opus-4-5">Claude Opus 4.5 (most capable, slower)</option>
+        <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (fastest, lightweight)</option>
+      </select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-d btn-sm" onclick="clearApiKey()" style="margin-right:auto">Clear Key</button>
+      <button class="btn btn-p" onclick="saveApiKey()">Save & Apply</button>
+    </div>
+  </div>
+</div>
+
 <div class="ai-overlay" id="aiOverlay" onclick="toggleAIPanel()"></div>
 <div class="ai-panel" id="aiPanel">
   <div class="aip-header">
@@ -555,9 +595,12 @@ let nextId=1;
 document.addEventListener('DOMContentLoaded',()=>{
   loadStorage();
   renderCats();renderWS();renderMatrix();renderSummary();renderVideos();
-  updateBadges();updateProjBadge();
+  updateBadges();updateProjBadge();updateApiKeyBtn();
   document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
-  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();exportJSON();}});
+  document.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();exportJSON();}
+    if(e.key==='Escape')closeSettings();
+  });
   setInterval(saveData,30000);
 });
 
@@ -881,6 +924,49 @@ function loadStorage(){
   }catch(e){console.warn('Load failed:',e);}
 }
 
+// ═══════════════ API KEY SETTINGS ═══════════════
+function getApiKey(){return localStorage.getItem('r2s_apikey')||'';}
+function getModel(){return localStorage.getItem('r2s_model')||'claude-sonnet-4-20250514';}
+
+function openSettings(){
+  const key=getApiKey();
+  document.getElementById('apiKeyInput').value=key;
+  document.getElementById('modelSelect').value=getModel();
+  const badge=document.getElementById('apiStatusBadge');
+  badge.textContent=key?'● API key is set — AI features enabled':'● No API key set — AI features disabled';
+  badge.className='api-status '+(key?'set':'unset');
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
+function saveApiKey(){
+  const key=document.getElementById('apiKeyInput').value.trim();
+  const model=document.getElementById('modelSelect').value;
+  if(!key){notify('⚠ Please enter an API key');return;}
+  localStorage.setItem('r2s_apikey',key);
+  localStorage.setItem('r2s_model',model);
+  updateApiKeyBtn();
+  closeSettings();
+  notify('✓ API key saved — AI features ready');
+}
+function clearApiKey(){
+  localStorage.removeItem('r2s_apikey');
+  document.getElementById('apiKeyInput').value='';
+  const badge=document.getElementById('apiStatusBadge');
+  badge.textContent='● No API key set — AI features disabled';
+  badge.className='api-status unset';
+  updateApiKeyBtn();
+  notify('✓ API key cleared');
+}
+function updateApiKeyBtn(){
+  const btn=document.getElementById('apiKeyBtn');
+  const key=getApiKey();
+  if(btn){
+    btn.textContent=key?'✓ API Key Set':'⚙ API Key';
+    btn.style.color=key?'#22c55e':'';
+    btn.style.borderColor=key?'#22c55e':'';
+  }
+}
+
 // ═══════════════ AI PANEL ═══════════════
 let aiPanelOpen=false;
 let chatHistory=[];
@@ -903,21 +989,37 @@ const AI_SYSTEM=`You are an expert HAZID (Hazard Identification Study) facilitat
 Your role: assist the HAZID team by identifying hazards, assessing risks, developing effective control measures, and facilitating ALARP demonstration. Be concise, practical, and specific. Use industry-standard terminology. When suggesting risk ratings, justify your reasoning.`;
 
 async function callAI(userMsg){
+  const key=getApiKey();
+  if(!key)throw new Error('No API key. Click "⚙ API Key" in the header to add yours.');
   const resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:AI_SYSTEM,messages:[{role:'user',content:userMsg}]})
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-allow-browser':'true'
+    },
+    body:JSON.stringify({model:getModel(),max_tokens:1000,system:AI_SYSTEM,messages:[{role:'user',content:userMsg}]})
   });
-  if(!resp.ok)throw new Error(`API ${resp.status}`);
+  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`API error ${resp.status}`);}
   const d=await resp.json();return d.content[0].text;
 }
 
 async function callAIWithHistory(userMsg){
+  const key=getApiKey();
+  if(!key)throw new Error('No API key. Click "⚙ API Key" in the header to add yours.');
   chatHistory.push({role:'user',content:userMsg});
   const resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:AI_SYSTEM,messages:chatHistory})
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-allow-browser':'true'
+    },
+    body:JSON.stringify({model:getModel(),max_tokens:1000,system:AI_SYSTEM,messages:chatHistory})
   });
-  if(!resp.ok)throw new Error(`API ${resp.status}`);
+  if(!resp.ok){chatHistory.pop();const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`API error ${resp.status}`);}
   const d=await resp.json();const reply=d.content[0].text;
   chatHistory.push({role:'assistant',content:reply});return reply;
 }
